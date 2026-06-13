@@ -385,9 +385,19 @@ function showRowMenu(event, customerId) {
     <div class="row-menu-item" onclick="closeAllMenus(); showCustomerModal(customers.find(c => c.id === '${customerId}'))">Edit</div>
     <div class="row-menu-item row-menu-item--danger" onclick="closeAllMenus(); deleteCustomer('${customerId}')">Delete</div>
   `;
-  menu.style.top = (rect.bottom + 4) + 'px';
-  menu.style.left = (rect.left - 80) + 'px';
   document.body.appendChild(menu);
+  const menuRect = menu.getBoundingClientRect();
+  let top = rect.bottom + 4;
+  let left = rect.left - 80;
+  if (top + menuRect.height > window.innerHeight) {
+    top = rect.top - menuRect.height - 4;
+  }
+  if (left + menuRect.width > window.innerWidth) {
+    left = window.innerWidth - menuRect.width - 8;
+  }
+  if (left < 8) left = 8;
+  menu.style.top = top + 'px';
+  menu.style.left = left + 'px';
   setTimeout(() => {
     document.addEventListener('click', function handler() {
       closeAllMenus();
@@ -562,27 +572,84 @@ function sortCustomers(column) {
     sortColumn = column;
     sortDir = "asc";
   }
-  renderAllCustomers();
+  updateCustomerTable();
 }
 
-function renderAllCustomers() {
+function getFilteredCustomers() {
   let filtered = customers.filter(c =>
     c.fullName.toLowerCase().includes(currentSearchQuery) ||
     c.phone.includes(currentSearchQuery) ||
     (c.email && c.email.toLowerCase().includes(currentSearchQuery))
   );
-
   filtered.sort((a, b) => {
     const aVal = (a[sortColumn] || "").toString().toLowerCase();
     const bVal = (b[sortColumn] || "").toString().toLowerCase();
     return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
   });
+  return filtered;
+}
 
-  const arrow = (col) => {
-    if (sortColumn !== col) return '<span class="sort-arrow"></span>';
-    return sortDir === "asc" ? '<span class="sort-arrow">↑</span>' : '<span class="sort-arrow">↓</span>';
-  };
+function buildTableRows(filtered) {
+  if (filtered.length === 0) {
+    return `
+      <div class="empty-state">
+        <p>No customers found.</p>
+        <button onclick="document.getElementById('customer-search').value=''; currentSearchQuery=''; updateCustomerTable();">Clear Search</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th onclick="sortCustomers('fullName')">Name ${sortArrow('fullName')}</th>
+            <th onclick="sortCustomers('phone')">Phone ${sortArrow('phone')}</th>
+            <th onclick="sortCustomers('email')">Email ${sortArrow('email')}</th>
+            <th onclick="sortCustomers('source')">Source ${sortArrow('source')}</th>
+            <th onclick="sortCustomers('status')">Status ${sortArrow('status')}</th>
+            <th onclick="sortCustomers('lastContactDate')">Last Contact ${sortArrow('lastContactDate')}</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.map(c => `
+            <tr onclick="window.location.hash='#customer/${c.id}'" style="cursor:pointer">
+              <td><div class="td-with-avatar">${renderAvatarCircle(c.fullName)}<span>${c.fullName}</span></div></td>
+              <td>${c.phone}</td>
+              <td>${c.email || '—'}</td>
+              <td>${c.source}</td>
+              <td>${renderStatusBadge(c.status)}</td>
+              <td>${c.lastContactDate || '—'}</td>
+              <td onclick="event.stopPropagation()">
+                <div class="action-btns">
+                  <button class="btn-icon btn-edit" onclick="showCustomerModal(customers.find(cu => cu.id === '${c.id}'))" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                  <button class="btn-icon btn-delete" onclick="deleteCustomer('${c.id}')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
 
+function sortArrow(col) {
+  if (sortColumn !== col) return '<span class="sort-arrow"></span>';
+  return sortDir === "asc" ? '<span class="sort-arrow">↑</span>' : '<span class="sort-arrow">↓</span>';
+}
+
+function updateCustomerTable() {
+  const filtered = getFilteredCustomers();
+  const countEl = document.querySelector('.page-count');
+  const tableCard = document.querySelector('.table-card');
+  if (countEl) countEl.textContent = `(${filtered.length})`;
+  if (tableCard) tableCard.innerHTML = buildTableRows(filtered);
+}
+
+function renderAllCustomers() {
+  const filtered = getFilteredCustomers();
   const content = document.getElementById('content');
   content.innerHTML = `
     <div class="page-header">
@@ -599,46 +666,7 @@ function renderAllCustomers() {
       </div>
     </div>
     <div class="table-card">
-      ${filtered.length > 0 ? `
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th onclick="sortCustomers('fullName')">Name ${arrow('fullName')}</th>
-                <th onclick="sortCustomers('phone')">Phone ${arrow('phone')}</th>
-                <th onclick="sortCustomers('email')">Email ${arrow('email')}</th>
-                <th onclick="sortCustomers('source')">Source ${arrow('source')}</th>
-                <th onclick="sortCustomers('status')">Status ${arrow('status')}</th>
-                <th onclick="sortCustomers('lastContactDate')">Last Contact ${arrow('lastContactDate')}</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filtered.map(c => `
-                <tr onclick="window.location.hash='#customer/${c.id}'" style="cursor:pointer">
-                  <td><div class="td-with-avatar">${renderAvatarCircle(c.fullName)}<span>${c.fullName}</span></div></td>
-                  <td>${c.phone}</td>
-                  <td>${c.email || '—'}</td>
-                  <td>${c.source}</td>
-                  <td>${renderStatusBadge(c.status)}</td>
-                  <td>${c.lastContactDate || '—'}</td>
-                  <td onclick="event.stopPropagation()">
-                    <div class="action-btns">
-                      <button class="btn-icon btn-edit" onclick="showCustomerModal(customers.find(cu => cu.id === '${c.id}'))" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                      <button class="btn-icon btn-delete" onclick="deleteCustomer('${c.id}')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
-                    </div>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      ` : `
-        <div class="empty-state">
-          <p>No customers found.</p>
-          <button onclick="document.getElementById('customer-search').value=''; currentSearchQuery=''; renderAllCustomers();">Clear Search</button>
-        </div>
-      `}
+      ${buildTableRows(filtered)}
     </div>
   `;
 
@@ -647,8 +675,10 @@ function renderAllCustomers() {
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       currentSearchQuery = e.target.value.toLowerCase();
-      renderAllCustomers();
+      updateCustomerTable();
     });
+    searchInput.focus();
+    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
   }
 }
 
@@ -718,5 +748,27 @@ window.addEventListener("DOMContentLoaded", () => {
   loadData();
   renderSidebar();
   renderTopbar();
+
+  // Topbar global search
+  const globalSearch = document.getElementById('global-search');
+  if (globalSearch) {
+    globalSearch.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      if (q.length > 0) {
+        currentSearchQuery = q.toLowerCase();
+        if (window.location.hash !== "#customers-all") {
+          window.location.hash = "#customers-all";
+        } else {
+          renderAllCustomers();
+        }
+      } else {
+        currentSearchQuery = "";
+        if (window.location.hash === "#customers-all") {
+          renderAllCustomers();
+        }
+      }
+    });
+  }
+
   router();
 });
