@@ -350,6 +350,11 @@ body.modal-open {
   position: fixed;
   inset: 0;
   z-index: 1000;
+  pointer-events: none;
+}
+
+body.modal-open #modal-overlay {
+  pointer-events: auto;
 }
 
 .modal-backdrop {
