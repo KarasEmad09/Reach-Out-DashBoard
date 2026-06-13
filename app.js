@@ -7,6 +7,7 @@ let chartInstance = null;
 let currentSearchQuery = "";
 let sortColumn = "fullName";
 let sortDir = "asc";
+let currentTableConfig = { filterFn: null, title: "All Customers", extraColumns: [] };
 
 /* === DATA LAYER === */
 function loadData() {
@@ -576,11 +577,13 @@ function sortCustomers(column) {
 }
 
 function getFilteredCustomers() {
-  let filtered = customers.filter(c =>
-    c.fullName.toLowerCase().includes(currentSearchQuery) ||
-    c.phone.includes(currentSearchQuery) ||
-    (c.email && c.email.toLowerCase().includes(currentSearchQuery))
-  );
+  let filtered = customers.filter(c => {
+    const matchesSearch = c.fullName.toLowerCase().includes(currentSearchQuery) ||
+      c.phone.includes(currentSearchQuery) ||
+      (c.email && c.email.toLowerCase().includes(currentSearchQuery));
+    const matchesFilter = currentTableConfig.filterFn ? currentTableConfig.filterFn(c) : true;
+    return matchesSearch && matchesFilter;
+  });
   filtered.sort((a, b) => {
     const aVal = (a[sortColumn] || "").toString().toLowerCase();
     const bVal = (b[sortColumn] || "").toString().toLowerCase();
@@ -590,6 +593,8 @@ function getFilteredCustomers() {
 }
 
 function buildTableRows(filtered) {
+  const extraCols = currentTableConfig.extraColumns || [];
+  const extraHeaders = extraCols.map(col => `<th>${col.label}</th>`).join('');
   if (filtered.length === 0) {
     return `
       <div class="empty-state">
@@ -609,6 +614,7 @@ function buildTableRows(filtered) {
             <th onclick="sortCustomers('source')">Source ${sortArrow('source')}</th>
             <th onclick="sortCustomers('status')">Status ${sortArrow('status')}</th>
             <th onclick="sortCustomers('lastContactDate')">Last Contact ${sortArrow('lastContactDate')}</th>
+            ${extraHeaders}
             <th>Actions</th>
           </tr>
         </thead>
@@ -621,6 +627,7 @@ function buildTableRows(filtered) {
               <td>${c.source}</td>
               <td>${renderStatusBadge(c.status)}</td>
               <td>${c.lastContactDate || '—'}</td>
+              ${extraCols.map(col => `<td>${col.render(c)}</td>`).join('')}
               <td onclick="event.stopPropagation()">
                 <div class="action-btns">
                   <button class="btn-icon btn-edit" onclick="showCustomerModal(customers.find(cu => cu.id === '${c.id}'))" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -648,19 +655,23 @@ function updateCustomerTable() {
   if (tableCard) tableCard.innerHTML = buildTableRows(filtered);
 }
 
-function renderAllCustomers() {
+function renderCustomerTable(config) {
+  currentTableConfig = config;
+  currentSearchQuery = "";
+  sortColumn = "fullName";
+  sortDir = "asc";
   const filtered = getFilteredCustomers();
   const content = document.getElementById('content');
   content.innerHTML = `
     <div class="page-header">
       <div class="page-header-left">
-        <h2>All Customers</h2>
+        <h2>${config.title}</h2>
         <span class="page-count">(${filtered.length})</span>
       </div>
       <div class="page-header-right">
         <div class="page-search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="customer-search" placeholder="Search customers..." value="${currentSearchQuery}">
+          <input type="text" id="customer-search" placeholder="Search customers..." value="">
         </div>
         <button class="btn-primary" onclick="showCustomerModal()">+ Add Customer</button>
       </div>
@@ -670,7 +681,6 @@ function renderAllCustomers() {
     </div>
   `;
 
-  // Attach search listener
   const searchInput = document.getElementById('customer-search');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
@@ -678,6 +688,48 @@ function renderAllCustomers() {
       updateCustomerTable();
     });
   }
+}
+
+function renderAllCustomers() {
+  renderCustomerTable({ filterFn: null, title: "All Customers", extraColumns: [] });
+}
+
+/* === STATUS FILTER PAGES === */
+function renderNewLeads() {
+  renderCustomerTable({ filterFn: (c) => c.status === "New Lead", title: "New Leads", extraColumns: [] });
+}
+
+function renderInterested() {
+  renderCustomerTable({ filterFn: (c) => c.status === "Interested", title: "Interested Customers", extraColumns: [] });
+}
+
+function renderHotLeads() {
+  renderCustomerTable({ filterFn: (c) => c.status === "Hot Lead", title: "Hot Leads", extraColumns: [] });
+}
+
+function renderFollowUps() {
+  renderCustomerTable({ filterFn: (c) => c.status === "Follow Up", title: "Follow Ups", extraColumns: [] });
+}
+
+function renderWonDeals() {
+  renderCustomerTable({
+    filterFn: (c) => c.status === "Won Deal",
+    title: "Won Deals",
+    extraColumns: [
+      { label: "Deal Value", render: (c) => c.dealValue ? `<strong>${c.dealValue}</strong>` : '—' },
+      { label: "Product", render: (c) => c.product || '—' }
+    ]
+  });
+}
+
+function renderLostDeals() {
+  renderCustomerTable({
+    filterFn: (c) => c.status === "Lost Deal",
+    title: "Lost Deals",
+    extraColumns: [
+      { label: "Lost Reason", render: (c) => c.lostReason || '—' }
+    ]
+  });
 }
 
 /* === ROUTER === */
@@ -697,12 +749,12 @@ const PAGE_NAMES = {
 const ROUTES = {
   "#dashboard": renderDashboard,
   "#customers-all": renderAllCustomers,
-  "#customers-new-leads": null,
-  "#customers-interested": null,
-  "#customers-hot-leads": null,
-  "#customers-follow-ups": null,
-  "#deals-won": null,
-  "#deals-lost": null,
+  "#customers-new-leads": renderNewLeads,
+  "#customers-interested": renderInterested,
+  "#customers-hot-leads": renderHotLeads,
+  "#customers-follow-ups": renderFollowUps,
+  "#deals-won": renderWonDeals,
+  "#deals-lost": renderLostDeals,
   "#notes": null,
   "#settings": null
 };
