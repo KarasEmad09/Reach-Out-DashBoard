@@ -51,6 +51,182 @@ function addActivity(type, customerName, description) {
   saveData();
 }
 
+/* === MODAL === */
+function generateId(prefix) {
+  return prefix + "_" + Date.now();
+}
+
+function showCustomerModal(customer = null) {
+  const isEdit = customer !== null;
+  const title = isEdit ? "Edit Customer" : "Add Customer";
+  const submitText = isEdit ? "Update Customer" : "Save Customer";
+  const sourceOptions = SOURCES.map(s => `<option value="${s}" ${isEdit && customer.source === s ? "selected" : ""}>${s}</option>`).join('');
+  const statusOptions = STATUSES.map(s => `<option value="${s.key}" ${isEdit && customer.status === s.key ? "selected" : ""}>${s.key}</option>`).join('');
+
+  const html = `
+    <div class="modal-backdrop">
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h2 class="modal-title">${title}</h2>
+          <button class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="modal-name" class="form-input" placeholder="Enter full name" value="${isEdit ? customer.fullName : ""}">
+            <span id="modal-name-error" class="form-error">Name is required</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone *</label>
+            <input type="text" id="modal-phone" class="form-input" placeholder="+20 1XX XXX XXXX" value="${isEdit ? customer.phone : ""}">
+            <span id="modal-phone-error" class="form-error">Phone is required</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="modal-email" class="form-input" placeholder="email@example.com" value="${isEdit && customer.email ? customer.email : ""}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Company</label>
+            <input type="text" id="modal-company" class="form-input" placeholder="Company name" value="${isEdit && customer.company ? customer.company : ""}">
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-half">
+              <label class="form-label">Source</label>
+              <select id="modal-source" class="form-select">${sourceOptions}</select>
+            </div>
+            <div class="form-group form-group-half">
+              <label class="form-label">Status</label>
+              <select id="modal-status" class="form-select">${statusOptions}</select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group form-group-half">
+              <label class="form-label">Last Contact Date</label>
+              <input type="date" id="modal-last-contact" class="form-input" value="${isEdit && customer.lastContactDate ? customer.lastContactDate : ""}">
+            </div>
+            <div class="form-group form-group-half">
+              <label class="form-label">Next Follow Up Date</label>
+              <input type="date" id="modal-next-followup" class="form-input" value="${isEdit && customer.nextFollowUpDate ? customer.nextFollowUpDate : ""}">
+            </div>
+          </div>
+          <div class="form-group" id="modal-notes-group" ${isEdit ? 'style="display:none"' : ""}>
+            <label class="form-label">Notes</label>
+            <textarea id="modal-notes" class="form-textarea" rows="3" placeholder="Add initial note...">${!isEdit ? "" : ""}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary modal-cancel">Cancel</button>
+          <button class="btn-primary modal-submit">${submitText}</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modal-overlay').innerHTML = html;
+  document.body.classList.add('modal-open');
+
+  // Event listeners
+  document.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  document.querySelector('.modal-cancel').addEventListener('click', closeModal);
+  document.querySelector('.modal-backdrop').addEventListener('click', (e) => {
+    if (e.target === document.querySelector('.modal-backdrop')) {
+      closeModal();
+    }
+  });
+  document.querySelector('.modal-panel').addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  document.addEventListener('keydown', handleEscapeKey);
+  document.querySelector('.modal-submit').addEventListener('click', () => {
+    handleModalSubmit(customer);
+  });
+}
+
+function handleEscapeKey(e) {
+  if (e.key === 'Escape') {
+    closeModal();
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').innerHTML = '';
+  document.body.classList.remove('modal-open');
+  document.removeEventListener('keydown', handleEscapeKey);
+}
+
+function handleModalSubmit(existingCustomer) {
+  const name = document.getElementById('modal-name').value.trim();
+  const phone = document.getElementById('modal-phone').value.trim();
+  const email = document.getElementById('modal-email').value.trim();
+  const company = document.getElementById('modal-company').value.trim();
+  const source = document.getElementById('modal-source').value;
+  const status = document.getElementById('modal-status').value;
+  const lastContact = document.getElementById('modal-last-contact').value;
+  const nextFollowUp = document.getElementById('modal-next-followup').value;
+  const notesText = document.getElementById('modal-notes').value.trim();
+
+  // Validate
+  const nameError = document.getElementById('modal-name-error');
+  const phoneError = document.getElementById('modal-phone-error');
+  nameError.classList.remove('visible');
+  phoneError.classList.remove('visible');
+
+  let hasError = false;
+  if (!name) {
+    nameError.classList.add('visible');
+    hasError = true;
+  }
+  if (!phone) {
+    phoneError.classList.add('visible');
+    hasError = true;
+  }
+  if (hasError) return;
+
+  if (existingCustomer) {
+    // Edit mode
+    existingCustomer.fullName = name;
+    existingCustomer.phone = phone;
+    existingCustomer.email = email;
+    existingCustomer.company = company;
+    existingCustomer.source = source;
+    existingCustomer.status = status;
+    existingCustomer.lastContactDate = lastContact || new Date().toISOString().split('T')[0];
+    existingCustomer.nextFollowUpDate = nextFollowUp || null;
+    addActivity("status_change", name, "profile updated");
+  } else {
+    // Add mode
+    const newCustomer = {
+      id: generateId("cust"),
+      fullName: name,
+      phone: phone,
+      email: email,
+      company: company,
+      source: source,
+      status: status,
+      notes: [],
+      dealValue: null,
+      productPurchased: null,
+      lostReason: null,
+      lastContactDate: lastContact || new Date().toISOString().split('T')[0],
+      nextFollowUpDate: nextFollowUp || null,
+      createdAt: new Date().toISOString()
+    };
+    if (notesText) {
+      newCustomer.notes.push({
+        id: generateId("note"),
+        text: notesText,
+        createdAt: new Date().toISOString()
+      });
+    }
+    customers.push(newCustomer);
+    addActivity("new_customer", name, "added as new lead");
+  }
+
+  saveData();
+  closeModal();
+  router();
+}
+
 /* === SIDEBAR === */
 function renderSidebar() {
   const sidebar = document.getElementById('sidebar');
