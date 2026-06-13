@@ -5,8 +5,8 @@
 ---
 
 ## Current Status
-**Active Phase:** Phase 6 — Status Filter Pages
-**Overall Completion:** 56%
+**Active Phase:** Phase 7 — Customer Detail Page
+**Overall Completion:** 67%
 **Last Update:** June 13, 2026
 
 ---
@@ -87,13 +87,13 @@
   - Show "No customers found" empty state if no matching results exist.
 
 ### Phase 6 — Status Filter Pages
-- [ ] **6.1 Reusable Table Rendering**
+- [x] **6.1 Reusable Table Rendering**
   - Build `renderCustomerTable(config)` in `app.js` to draw filtered tables dynamically.
-- [ ] **6.2 Basic Status Filters**
+- [x] **6.2 Basic Status Filters**
   - Implement New Leads, Interested Customers, Hot Leads, and Follow Ups status pages.
-- [ ] **6.3 Won Deals Extra Information**
+- [x] **6.3 Won Deals Extra Information**
   - Render Won Deals page displaying extra columns: Deal Value ($) and Product Purchased.
-- [ ] **6.4 Lost Deals Extra Information**
+- [x] **6.4 Lost Deals Extra Information**
   - Render Lost Deals page displaying extra column: Lost Reason.
 
 ### Phase 7 — Customer Detail Page
@@ -189,3 +189,16 @@
 - Added page header styles, table card, page search input, sort arrow, edit/delete button hover colors.
 - **Blockers:** None
 - **Next:** Phase 6 — Status Filter Pages
+
+### Session 6 — Phase 6 Complete
+- Added `currentTableConfig` state variable to track active filter config (filterFn, title, extraColumns).
+- Refactored `renderAllCustomers()` to be a thin wrapper calling `renderCustomerTable(config)`.
+- Added `renderCustomerTable(config)` — shared function that sets config, resets search/sort, renders page header with title/count/search/Add button, and builds table with dynamic extra columns.
+- Refactored `getFilteredCustomers()` to apply both search query and config's filterFn.
+- Refactored `buildTableRows()` to render dynamic extra columns from config.
+- Added 6 route functions: `renderNewLeads()`, `renderInterested()`, `renderHotLeads()`, `renderFollowUps()`, `renderWonDeals()`, `renderLostDeals()`.
+- Won Deals shows extra columns: Deal Value and Product.
+- Lost Deals shows extra column: Lost Reason.
+- Wired all 6 routes in ROUTES object.
+- **Blockers:** None
+- **Next:** Phase 7 — Customer Detail Page
