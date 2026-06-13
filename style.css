@@ -33,7 +33,13 @@
 }
 
 body.dark-mode {
-  /* placeholder — filled in Phase 8 */
+  --color-bg: #0F172A;
+  --color-surface: #1E293B;
+  --color-border: #334155;
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-sidebar-bg: #020617;
 }
 
 /* === 2. BASE RESET === */
@@ -1177,4 +1183,221 @@ body.modal-open #modal-overlay {
   color: var(--color-text-muted);
   padding: 32px 0;
   font-size: var(--font-sm);
+}
+
+/* === NOTIFICATION DROPDOWN === */
+.notif-dropdown {
+  position: fixed;
+  z-index: 1000;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notif-dropdown h4 {
+  padding: 14px 16px 10px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.notif-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item strong {
+  color: var(--color-text-primary);
+}
+
+.notif-time {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.notif-empty {
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-sm);
+}
+
+/* === NOTES FEED PAGE === */
+.notes-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.note-feed-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.note-feed-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.note-feed-customer {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.note-feed-customer a {
+  color: var(--color-accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.note-feed-customer a:hover {
+  text-decoration: underline;
+}
+
+.note-feed-text {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.note-feed-date {
+  font-size: var(--font-xs);
+  color: var(--color-text-muted);
+}
+
+/* === SETTINGS PAGE === */
+.settings-section {
+  margin-bottom: 32px;
+}
+
+.settings-section h3 {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+
+.settings-desc {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+}
+
+.theme-cards {
+  display: flex;
+  gap: 20px;
+}
+
+.theme-card {
+  cursor: pointer;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 16px;
+  width: 200px;
+  text-align: center;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.theme-card:hover {
+  border-color: var(--color-accent);
+}
+
+.theme-card--active {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.theme-card-preview {
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 12px;
+}
+
+.theme-card-preview--light {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+}
+
+.theme-card-preview--dark {
+  background: #0F172A;
+  border: 1px solid #334155;
+}
+
+.theme-preview-sidebar {
+  width: 30%;
+  border-radius: 6px 0 0 6px;
+}
+
+.theme-card-preview--light .theme-preview-sidebar {
+  background: #0F172A;
+}
+
+.theme-card-preview--dark .theme-preview-sidebar {
+  background: #020617;
+}
+
+.theme-preview-content {
+  flex: 1;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.theme-preview-bar {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.theme-card-preview--light .theme-preview-bar {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+}
+
+.theme-card-preview--dark .theme-preview-bar {
+  background: #1E293B;
+  border: 1px solid #334155;
+}
+
+.theme-preview-card {
+  flex: 1;
+  border-radius: 4px;
+}
+
+.theme-card-preview--light .theme-preview-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+}
+
+.theme-card-preview--dark .theme-preview-card {
+  background: #1E293B;
+  border: 1px solid #334155;
+}
+
+.theme-card-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
