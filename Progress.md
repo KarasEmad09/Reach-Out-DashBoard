@@ -5,8 +5,8 @@
 ---
 
 ## Current Status
-**Active Phase:** Phase 7 — Customer Detail Page
-**Overall Completion:** 67%
+**Active Phase:** Phase 8 — Notes & Settings
+**Overall Completion:** 78%
 **Last Update:** June 13, 2026
 
 ---
@@ -97,14 +97,14 @@
   - Render Lost Deals page displaying extra column: Lost Reason.
 
 ### Phase 7 — Customer Detail Page
-- [ ] **7.1 Two-Column Detail View**
+- [x] **7.1 Two-Column Detail View**
   - Build Left Column showing general customer profile fields, Won Deal details, or Lost Deal details.
   - Build Right Column displaying the notes list feed (newest first).
-- [ ] **7.2 Interactive Status Updates**
+- [x] **7.2 Interactive Status Updates**
   - Wire dropdown to update status; prompt for Deal Value/Product or Lost Reason if Won/Lost selected; log activity; and re-render.
-- [ ] **7.3 Note Logging Form**
+- [x] **7.3 Note Logging Form**
   - Implement submit button to append text note, update last contact, log activity, and re-render feed.
-- [ ] **7.4 Note Deletion**
+- [x] **7.4 Note Deletion**
   - Wire `×` button to remove note from array, save to localStorage, and re-render notes feed.
 
 ### Phase 8 — Notes & Settings
@@ -202,3 +202,13 @@
 - Wired all 6 routes in ROUTES object.
 - **Blockers:** None
 - **Next:** Phase 7 — Customer Detail Page
+
+### Session 7 — Phase 7 Complete
+- Updated `router()` to handle `#customer/:id` route — clears sidebar active, destroys chart, sets page title, calls `renderCustomerDetail(id)`.
+- Added `renderCustomerDetail(id)` — renders two-column layout with back bar, info card (all customer fields, status badge, status change select, Edit Customer button), Won Deal/Lost Deal conditional fields, and notes panel (add form + notes list sorted newest first).
+- Added `changeCustomerStatus(customerId, newStatus)` — updates status, logs activity, saves, re-renders.
+- Added `addNote(customerId)` — prepends note with ID and timestamp, logs activity, saves, re-renders.
+- Added `deleteNote(customerId, noteId)` — filters note out, saves, re-renders.
+- Added detail page CSS: back bar, two-column grid, detail card, fields layout, notes panel, note items, note delete button, btn-sm utility.
+- **Blockers:** None
+- **Next:** Phase 8 — Notes & Settings
