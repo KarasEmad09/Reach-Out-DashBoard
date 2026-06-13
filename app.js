@@ -295,6 +295,11 @@ function renderSidebar() {
   // Attach nav item click handlers
   sidebar.querySelectorAll('.nav-item[data-route]').forEach(item => {
     item.addEventListener('click', () => {
+      // Expand sidebar if collapsed
+      const app = document.getElementById('app');
+      if (app.classList.contains('sidebar-collapsed')) {
+        app.classList.remove('sidebar-collapsed');
+      }
       currentSearchQuery = "";
       notesSearchQuery = "";
       closeMobileSidebar();
@@ -305,9 +310,14 @@ function renderSidebar() {
   // Attach submenu toggle handlers
   sidebar.querySelectorAll('.nav-parent-trigger').forEach(trigger => {
     trigger.addEventListener('click', () => {
+      const app = document.getElementById('app');
       const parent = trigger.closest('.nav-parent');
       const submenu = parent.querySelector('.submenu');
-      submenu.classList.toggle('submenu--open');
+      // Expand sidebar if collapsed, then open submenu
+      if (app.classList.contains('sidebar-collapsed')) {
+        app.classList.remove('sidebar-collapsed');
+      }
+      submenu.classList.add('submenu--open');
     });
   });
 }
