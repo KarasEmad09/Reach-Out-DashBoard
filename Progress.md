@@ -5,8 +5,8 @@
 ---
 
 ## Current Status
-**Active Phase:** Phase 5 — All Customers Page
-**Overall Completion:** 44%
+**Active Phase:** Phase 6 — Status Filter Pages
+**Overall Completion:** 56%
 **Last Update:** June 13, 2026
 
 ---
@@ -73,15 +73,15 @@
   - Wire actions: Call button (`tel:` trigger), Message button (`mailto:` trigger), and 3-dot dropdowns.
 
 ### Phase 5 — All Customers Page
-- [ ] **5.1 Table Shell & Controls**
+- [x] **5.1 Table Shell & Controls**
   - Render All Customers page layout: title, search text-filter input, and "+ Add Customer" button.
-- [ ] **5.2 Customer Table Data Rendering**
+- [x] **5.2 Customer Table Data Rendering**
   - Render list of customers showing avatar initials, name, phone, email, source, status, last contact, and actions.
-- [ ] **5.3 Live Table Search Filter**
+- [x] **5.3 Live Table Search Filter**
   - Filter rows on-the-fly as user types in the search input (matching name, phone, or email).
-- [ ] **5.4 Column Sorting Engine**
+- [x] **5.4 Column Sorting Engine**
   - Enable header click handlers to sort rows asc/desc and update sort arrows.
-- [ ] **5.5 Record Actions & Row Clicks**
+- [x] **5.5 Record Actions & Row Clicks**
   - Direct row clicks to customer details `#customer/:id`.
   - Wire edit icon to show modal pre-filled; delete icon to pop confirm dialog, delete customer, log activity, and re-render.
   - Show "No customers found" empty state if no matching results exist.
@@ -179,3 +179,13 @@
 - Updated ROUTES["#dashboard"] to use renderDashboard.
 - **Blockers:** None
 - **Next:** Phase 5 — All Customers Page
+
+### Session 5 — Phase 5 Complete
+- Added `currentSearchQuery`, `sortColumn`, `sortDir` state variables to app.js.
+- Added `renderAllCustomers()` — renders page header (title, count, search input, Add Customer button), data table with all customer columns, sort arrows, edit/delete action buttons, and empty state.
+- Added `sortCustomers(column)` — toggles sort direction, re-renders table.
+- Added live search with `input` event listener — filters by name, phone, email.
+- Wired ROUTES["#customers-all"] to renderAllCustomers.
+- Added page header styles, table card, page search input, sort arrow, edit/delete button hover colors.
+- **Blockers:** None
+- **Next:** Phase 6 — Status Filter Pages
