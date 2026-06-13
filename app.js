@@ -297,6 +297,7 @@ function renderSidebar() {
     item.addEventListener('click', () => {
       currentSearchQuery = "";
       notesSearchQuery = "";
+      closeMobileSidebar();
       window.location.hash = item.getAttribute('data-route');
     });
   });
@@ -330,6 +331,9 @@ function updateSidebarActive(hash) {
 function renderTopbar() {
   const topbar = document.getElementById('topbar');
   topbar.innerHTML = `
+    <button class="hamburger-btn" onclick="toggleMobileSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <h1 id="page-title" class="topbar-title">Dashboard</h1>
     <div class="topbar-right">
       <div class="topbar-search">
@@ -343,6 +347,20 @@ function renderTopbar() {
       <div class="user-avatar">AD</div>
     </div>
   `;
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('sidebar--open');
+  overlay.classList.toggle('overlay--visible');
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.remove('sidebar--open');
+  overlay.classList.remove('overlay--visible');
 }
 
 /* === HELPERS === */
@@ -1122,6 +1140,13 @@ function router() {
 
 window.addEventListener("hashchange", router);
 window.addEventListener("DOMContentLoaded", () => {
+  // Inject sidebar overlay for mobile
+  const overlay = document.createElement('div');
+  overlay.id = 'sidebar-overlay';
+  overlay.className = 'sidebar-overlay';
+  overlay.addEventListener('click', closeMobileSidebar);
+  document.body.appendChild(overlay);
+
   loadData();
   renderSidebar();
   renderTopbar();
