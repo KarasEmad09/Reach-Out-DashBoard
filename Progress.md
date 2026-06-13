@@ -5,8 +5,8 @@
 ---
 
 ## Current Status
-**Active Phase:** Phase 4 — Dashboard Page
-**Overall Completion:** 33%
+**Active Phase:** Phase 5 — All Customers Page
+**Overall Completion:** 44%
 **Last Update:** June 13, 2026
 
 ---
@@ -58,17 +58,17 @@
   - Fixed `#modal-overlay` using `pointer-events: none` by default so it does not block page interactions.
 
 ### Phase 4 — Dashboard Page
-- [ ] **4.1 Stat Cards Grid**
+- [x] **4.1 Stat Cards Grid**
   - Render Row 1: Total Customers, New Leads, Interested, Hot Leads.
   - Render Row 2: Follow Ups, Won Deals, Lost Deals, Deal Value ($).
   - Read counters dynamically from state; calculate mock percentage trends; style status-icon colors.
-- [ ] **4.2 Recent Activity Panel**
+- [x] **4.2 Recent Activity Panel**
   - Fetch and render the last 10 activities from `activityLog` with status indicators.
   - Wire "View All" link to open a modal with the full history feed.
-- [ ] **4.3 Customers by Source Doughnut Chart**
+- [x] **4.3 Customers by Source Doughnut Chart**
   - Implement Chart.js Doughnut on canvas.
   - Calculate source metrics and print custom HTML legend grid showing counts and percentages.
-- [ ] **4.4 Upcoming Follow Ups Panel**
+- [x] **4.4 Upcoming Follow Ups Panel**
   - Filter customers with follow-up dates in the next 14 days, sorted by proximity.
   - Wire actions: Call button (`tel:` trigger), Message button (`mailto:` trigger), and 3-dot dropdowns.
 
@@ -167,3 +167,15 @@
 - Fixed `#modal-overlay` blocking all page clicks by adding `pointer-events: none` (enabled only when `body.modal-open`).
 - **Blockers:** None
 - **Next:** Phase 4 — Dashboard Page
+
+### Session 4 — Phase 4 Complete
+- Added `renderDashboard()` to app.js — renders 8 stat cards (Total, New Leads, Interested, Hot Leads, Follow Ups, Won Deals, Lost Deals, Deals Value), Recent Activity panel (last 10 entries), Customers by Source doughnut chart (Chart.js with custom legend), and Upcoming Follow Ups table.
+- Added `formatTimeAgo(isoString)` helper for relative timestamps.
+- Added `renderStatusBadge(status)` and `renderAvatarCircle(name)` helpers.
+- Added `showRowMenu(event, customerId)` with View/Edit/Delete dropdown and `closeAllMenus()`.
+- Added `deleteCustomer(id)` with confirm dialog.
+- Added `showActivityModal()` for full activity log in modal.
+- Added dashboard styles: stat cards grid, dashboard panels, activity list, chart container, chart legend, data table, action buttons, row menu, activity modal.
+- Updated ROUTES["#dashboard"] to use renderDashboard.
+- **Blockers:** None
+- **Next:** Phase 5 — All Customers Page
