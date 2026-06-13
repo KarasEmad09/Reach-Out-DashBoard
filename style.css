@@ -1012,6 +1012,7 @@ body.modal-open #modal-overlay {
 /* Sidebar collapsed state */
 #app.sidebar-collapsed #sidebar {
   width: 64px;
+  min-width: 64px;
 }
 
 #app.sidebar-collapsed #main-wrapper {
@@ -1517,37 +1518,12 @@ body.modal-open #modal-overlay {
 
 /* === RESPONSIVE — SMALL TABLET (≤900px) === */
 @media (max-width: 900px) {
-  #sidebar {
-    width: 64px;
-    min-width: 64px;
-  }
-
-  #sidebar .sidebar-logo-text,
-  #sidebar .nav-item span,
-  #sidebar .nav-section-label,
-  #sidebar .nav-arrow {
-    display: none;
-  }
-
-  #sidebar .nav-item {
-    justify-content: center;
-    padding: 10px;
-  }
-
-  #sidebar .nav-item svg:first-child {
-    margin: 0;
-  }
-
-  #sidebar .sidebar-collapse-btn {
-    justify-content: center;
-  }
-
-  #main-wrapper {
-    margin-left: 64px;
-  }
-
   .topbar-title {
     font-size: var(--font-base);
+  }
+
+  .topbar-search {
+    max-width: 160px;
   }
 }
 
