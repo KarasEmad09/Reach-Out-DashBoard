@@ -733,6 +733,166 @@ function renderLostDeals() {
   });
 }
 
+/* === CUSTOMER DETAIL PAGE === */
+function renderCustomerDetail(id) {
+  const customer = customers.find(c => c.id === id);
+  if (!customer) {
+    document.getElementById('content').innerHTML = `
+      <div class="empty-state">
+        <h2>Customer not found</h2>
+        <button onclick="window.location.hash='#customers-all'">Back to All Customers</button>
+      </div>`;
+    return;
+  }
+
+  const statusObj = STATUSES.find(s => s.key === customer.status);
+  const statusColor = statusObj ? statusObj.color : '#6B7280';
+  const statusBg = statusObj ? statusObj.bg : '#F9FAFB';
+  const statusOptions = STATUSES.map(s =>
+    `<option value="${s.key}" ${customer.status === s.key ? 'selected' : ''}>${s.key}</option>`
+  ).join('');
+
+  const notes = (customer.notes || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const notesHtml = notes.length > 0 ? notes.map(note => `
+    <div class="note-item">
+      <p class="note-text">${note.text}</p>
+      <div class="note-meta">
+        <span>${formatTimeAgo(note.createdAt)}</span>
+        <button class="note-delete-btn" onclick="deleteNote('${customer.id}', '${note.id}')" title="Delete note">&times;</button>
+      </div>
+    </div>
+  `).join('') : '<p class="notes-empty">No notes yet.</p>';
+
+  const wonDealFields = customer.status === "Won Deal" ? `
+    <div class="detail-field">
+      <span class="detail-label">Deal Value</span>
+      <span class="detail-value">${customer.dealValue || '—'}</span>
+    </div>
+    <div class="detail-field">
+      <span class="detail-label">Product Purchased</span>
+      <span class="detail-value">${customer.productPurchased || '—'}</span>
+    </div>
+  ` : '';
+
+  const lostDealFields = customer.status === "Lost Deal" ? `
+    <div class="detail-field">
+      <span class="detail-label">Lost Reason</span>
+      <span class="detail-value">${customer.lostReason || '—'}</span>
+    </div>
+  ` : '';
+
+  document.getElementById('content').innerHTML = `
+    <div class="detail-page">
+      <div class="detail-back-bar">
+        <button onclick="history.back()" class="btn-back">&larr; Back</button>
+        <h2>${customer.fullName}</h2>
+      </div>
+      <div class="detail-columns">
+        <div class="detail-left">
+          <div class="detail-card">
+            <div class="detail-card-header">
+              <h3>Customer Information</h3>
+              <button class="btn-primary btn-sm" onclick="showCustomerModal(customers.find(c => c.id === '${customer.id}'))">Edit Customer</button>
+            </div>
+            <div class="detail-fields">
+              <div class="detail-field">
+                <span class="detail-label">Full Name</span>
+                <span class="detail-value">${customer.fullName}</span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Phone</span>
+                <span class="detail-value">${customer.phone}</span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Email</span>
+                <span class="detail-value">${customer.email || '—'}</span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Company</span>
+                <span class="detail-value">${customer.company || '—'}</span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Source</span>
+                <span class="detail-value">${customer.source}</span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Status</span>
+                <span class="detail-value">
+                  <span class="status-badge" style="color:${statusColor};background:${statusBg}">${customer.status}</span>
+                </span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Change Status</span>
+                <span class="detail-value">
+                  <select class="form-select" onchange="changeCustomerStatus('${customer.id}', this.value)">
+                    ${statusOptions}
+                  </select>
+                </span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Created Date</span>
+                <span class="detail-value">${customer.createdDate || '—'}</span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Last Contact</span>
+                <span class="detail-value">${customer.lastContactDate || '—'}</span>
+              </div>
+              <div class="detail-field">
+                <span class="detail-label">Next Follow Up</span>
+                <span class="detail-value">${customer.nextFollowUpDate || '—'}</span>
+              </div>
+              ${wonDealFields}
+              ${lostDealFields}
+            </div>
+          </div>
+        </div>
+        <div class="detail-right">
+          <div class="detail-card notes-panel">
+            <h3>Notes</h3>
+            <div class="note-add">
+              <textarea id="note-input" placeholder="Add a note..." rows="3"></textarea>
+              <button class="btn-primary btn-sm" onclick="addNote('${customer.id}')">Add Note</button>
+            </div>
+            <div class="notes-list">
+              ${notesHtml}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function changeCustomerStatus(customerId, newStatus) {
+  const customer = customers.find(c => c.id === customerId);
+  if (!customer) return;
+  const oldStatus = customer.status;
+  customer.status = newStatus;
+  addActivity("status_change", customer.fullName, `moved from ${oldStatus} to ${newStatus}`);
+  saveData();
+  renderCustomerDetail(customerId);
+}
+
+function addNote(customerId) {
+  const text = document.getElementById('note-input').value.trim();
+  if (!text) return;
+  const customer = customers.find(c => c.id === customerId);
+  if (!customer) return;
+  if (!customer.notes) customer.notes = [];
+  customer.notes.unshift({ id: generateId("note"), text, createdAt: new Date().toISOString() });
+  addActivity("note_added", customer.fullName, "added a note");
+  saveData();
+  renderCustomerDetail(customerId);
+}
+
+function deleteNote(customerId, noteId) {
+  const customer = customers.find(c => c.id === customerId);
+  if (!customer) return;
+  customer.notes = (customer.notes || []).filter(n => n.id !== noteId);
+  saveData();
+  renderCustomerDetail(customerId);
+}
+
 /* === ROUTER === */
 const PAGE_NAMES = {
   "#dashboard": "Dashboard",
@@ -762,6 +922,22 @@ const ROUTES = {
 
 function router() {
   const hash = window.location.hash || "#dashboard";
+
+  // Handle dynamic customer detail route
+  if (hash.startsWith("#customer/")) {
+    const id = hash.replace("#customer/", "");
+    // Destroy chart if leaving dashboard
+    if (chartInstance) {
+      chartInstance.destroy();
+      chartInstance = null;
+    }
+    const titleEl = document.getElementById('page-title');
+    if (titleEl) titleEl.textContent = "Customer Detail";
+    updateSidebarActive("");
+    renderCustomerDetail(id);
+    return;
+  }
+
   currentRoute = hash;
 
   // Destroy chart if leaving dashboard
@@ -782,13 +958,6 @@ function router() {
   // Call route handler or clear content
   if (ROUTES[hash]) {
     ROUTES[hash]();
-  } else if (hash.startsWith("#customer/")) {
-    const id = hash.replace("#customer/", "");
-    if (typeof renderCustomerDetail === "function") {
-      renderCustomerDetail(id);
-    } else {
-      document.getElementById('content').innerHTML = '';
-    }
   } else {
     document.getElementById('content').innerHTML = '';
   }
