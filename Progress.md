@@ -5,8 +5,8 @@
 ---
 
 ## Current Status
-**Active Phase:** Phase 8 — Notes & Settings
-**Overall Completion:** 78%
+**Active Phase:** Phase 9 — Polish & QA
+**Overall Completion:** 89%
 **Last Update:** June 13, 2026
 
 ---
@@ -108,12 +108,12 @@
   - Wire `×` button to remove note from array, save to localStorage, and re-render notes feed.
 
 ### Phase 8 — Notes & Settings
-- [ ] **8.1 Notes & Questions Aggregator**
+- [x] **8.1 Notes & Questions Aggregator**
   - Gather all notes from all customers, sort newest first, and render with clickable client name redirects.
   - Add search bar to live-filter note text and client names.
-- [ ] **8.2 Theme Mode Toggle**
+- [x] **8.2 Theme Mode Toggle**
   - Build Light/Dark mode cards in Settings. Toggle body `.dark-mode` class, save setting, and highlight active card.
-- [ ] **8.3 Notification Bell Dropdown**
+- [x] **8.3 Notification Bell Dropdown**
   - Wire header bell to toggle a dropdown displaying the last 5 activity items.
 
 ### Phase 9 — Polish & QA
@@ -212,3 +212,16 @@
 - Added detail page CSS: back bar, two-column grid, detail card, fields layout, notes panel, note items, note delete button, btn-sm utility.
 - **Blockers:** None
 - **Next:** Phase 8 — Notes & Settings
+
+### Session 8 — Phase 8 Complete
+- Added `renderNotes()` — aggregates all notes from all customers, sorts newest first, renders feed with avatar, clickable customer name, note text, and timestamp. Includes live search filtering by customer name or note content.
+- Added `renderSettings()` — renders two theme cards (Light/Dark) with mini dashboard previews and active state highlight.
+- Added `setTheme(theme)` — saves theme to settings, applies it, re-renders settings page.
+- Added `applyTheme()` — toggles `body.dark-mode` class based on settings. Called in `loadData()` so theme persists on page load.
+- Added `toggleNotifDropdown()` — shows last 5 activity items in a positioned dropdown near the bell, closes on outside click.
+- Wired bell button `onclick` in `renderTopbar()`.
+- Filled in `body.dark-mode` CSS variables: dark background, surface, border, text colors, and sidebar.
+- Added CSS: notification dropdown, notes feed items, settings section, theme cards with mini dashboard previews.
+- Wired `#notes` and `#settings` routes in ROUTES object.
+- **Blockers:** None
+- **Next:** Phase 9 — Polish & QA
