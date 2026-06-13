@@ -677,8 +677,6 @@ function renderAllCustomers() {
       currentSearchQuery = e.target.value.toLowerCase();
       updateCustomerTable();
     });
-    searchInput.focus();
-    searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
   }
 }
 
