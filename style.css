@@ -82,6 +82,7 @@ body {
 
 #main-wrapper {
   margin-left: 240px;
+  transition: margin-left 0.3s ease;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -371,6 +372,12 @@ body.modal-open #modal-overlay {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-panel {
@@ -381,6 +388,12 @@ body.modal-open #modal-overlay {
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-header {
@@ -513,6 +526,8 @@ body.modal-open #modal-overlay {
 
 .btn-primary:hover {
   background: var(--color-accent-hover);
+  transform: translateY(-1px);
+  transition: all 0.1s ease;
 }
 
 .btn-secondary {
@@ -808,6 +823,10 @@ body.modal-open #modal-overlay {
   color: var(--color-text-primary);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
+}
+
+.data-table tbody tr {
+  transition: background-color 0.15s ease;
 }
 
 .data-table tbody tr:hover {
