@@ -338,6 +338,219 @@ function renderTopbar() {
   `;
 }
 
+/* === HELPERS === */
+function formatTimeAgo(isoString) {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return minutes + " minutes ago";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + " hours ago";
+  return Math.floor(hours / 24) + " days ago";
+}
+
+function renderStatusBadge(status) {
+  const s = STATUSES.find(s => s.key === status);
+  if (!s) return `<span class="status-badge">${status}</span>`;
+  return `<span class="status-badge" style="color:${s.color};background:${s.bg}">${s.key}</span>`;
+}
+
+function renderAvatarCircle(name) {
+  const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  return `<span class="avatar-circle">${initials}</span>`;
+}
+
+function deleteCustomer(id) {
+  if (!confirm("Delete this customer? This cannot be undone.")) return;
+  const customer = customers.find(c => c.id === id);
+  customers = customers.filter(c => c.id !== id);
+  if (customer) addActivity("status_change", customer.fullName, "was deleted");
+  saveData();
+  router();
+}
+
+/* === ROW MENU === */
+function showRowMenu(event, customerId) {
+  event.stopPropagation();
+  closeAllMenus();
+  const customer = customers.find(c => c.id === customerId);
+  if (!customer) return;
+  const rect = event.target.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'row-menu';
+  menu.innerHTML = `
+    <div class="row-menu-item" onclick="closeAllMenus(); window.location.hash='#customer/${customerId}'">View</div>
+    <div class="row-menu-item" onclick="closeAllMenus(); showCustomerModal(customers.find(c => c.id === '${customerId}'))">Edit</div>
+    <div class="row-menu-item row-menu-item--danger" onclick="closeAllMenus(); deleteCustomer('${customerId}')">Delete</div>
+  `;
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.left = (rect.left - 80) + 'px';
+  document.body.appendChild(menu);
+  setTimeout(() => {
+    document.addEventListener('click', function handler() {
+      closeAllMenus();
+      document.removeEventListener('click', handler);
+    });
+  }, 0);
+}
+
+function closeAllMenus() {
+  document.querySelectorAll('.row-menu').forEach(m => m.remove());
+}
+
+/* === DASHBOARD === */
+function renderDashboard() {
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const total = customers.length;
+  const newLeads = customers.filter(c => c.status === "New Lead").length;
+  const interested = customers.filter(c => c.status === "Interested Customer").length;
+  const hotLeads = customers.filter(c => c.status === "Hot Lead").length;
+  const followUps = customers.filter(c => c.status === "Follow Up").length;
+  const wonDeals = customers.filter(c => c.status === "Won Deal").length;
+  const lostDeals = customers.filter(c => c.status === "Lost Deal").length;
+  const dealsValue = customers.filter(c => c.status === "Won Deal").reduce((sum, c) => sum + (c.dealValue || 0), 0);
+
+  const sourceCounts = SOURCES.map(s => customers.filter(c => c.source === s).length);
+  const sourcePercentages = sourceCounts.map(c => total > 0 ? Math.round((c / total) * 100) : 0);
+  const sourceColors = ['#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#10B981', '#6B7280', '#EC4899', '#14B8A6'];
+
+  const recentActivity = activityLog.slice(0, 10);
+  const upcomingFollowUps = customers.filter(c => c.nextFollowUpDate).sort((a, b) => new Date(a.nextFollowUpDate) - new Date(b.nextFollowUpDate));
+
+  const statIcons = {
+    total: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    new: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+    interested: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    hot: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+    followup: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    won: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+    lost: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    value: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
+  };
+
+  const iconBgColors = {
+    total: '#EFF6FF', new: '#EFF6FF', interested: '#FFFBEB', hot: '#FEF2F2',
+    followup: '#F5F3FF', won: '#ECFDF5', lost: '#F9FAFB', value: '#ECFDF5'
+  };
+
+  const activityTypeColors = {
+    status_change: '#3B82F6', note_added: '#8B5CF6', follow_up: '#F59E0B', new_customer: '#10B981'
+  };
+
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="dashboard">
+      <div class="stat-cards">
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Total Customers</p><h2 class="stat-card__value">${total}</h2><p class="stat-card__trend trend-up">+${newLeads} new this month</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.total}">${statIcons.total}</div></div>
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">New Leads</p><h2 class="stat-card__value">${newLeads}</h2><p class="stat-card__trend trend-up">Active leads</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.new}">${statIcons.new}</div></div>
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Interested</p><h2 class="stat-card__value">${interested}</h2><p class="stat-card__trend trend-up">In pipeline</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.interested}">${statIcons.interested}</div></div>
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Hot Leads</p><h2 class="stat-card__value">${hotLeads}</h2><p class="stat-card__trend trend-up">Ready to close</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.hot}">${statIcons.hot}</div></div>
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Follow Ups</p><h2 class="stat-card__value">${followUps}</h2><p class="stat-card__trend trend-up">Pending</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.followup}">${statIcons.followup}</div></div>
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Won Deals</p><h2 class="stat-card__value">${wonDeals}</h2><p class="stat-card__trend trend-up">Closed won</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.won}">${statIcons.won}</div></div>
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Lost Deals</p><h2 class="stat-card__value">${lostDeals}</h2><p class="stat-card__trend trend-up">Closed lost</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.lost}">${statIcons.lost}</div></div>
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Deals Value</p><h2 class="stat-card__value">$${dealsValue.toLocaleString()}</h2><p class="stat-card__trend trend-up">Total revenue</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.value}">${statIcons.value}</div></div>
+      </div>
+      <div class="dashboard-grid">
+        <div class="dashboard-panel activity-panel">
+          <div class="panel-header"><h3>Recent Activity</h3><button class="btn-link" onclick="showActivityModal()">View All</button></div>
+          <div class="activity-list">
+            ${recentActivity.length > 0 ? recentActivity.map(a => `
+              <div class="activity-item">
+                <div class="activity-dot" style="background:${activityTypeColors[a.type] || '#94A3B8'}"></div>
+                <div class="activity-content">
+                  <p><strong>${a.customerName}</strong> ${a.description}</p>
+                  <span class="activity-time">${formatTimeAgo(a.timestamp)}</span>
+                </div>
+              </div>
+            `).join('') : '<p class="empty-text">No recent activity</p>'}
+          </div>
+        </div>
+        <div class="dashboard-panel chart-panel">
+          <div class="panel-header"><h3>Customers by Source</h3></div>
+          <div class="chart-wrap"><canvas id="source-chart"></canvas></div>
+          <div class="chart-legend">
+            ${SOURCES.map((s, i) => `<div class="legend-item"><span class="legend-dot" style="background:${sourceColors[i]}"></span><span class="legend-label">${s}</span><span class="legend-value">${sourceCounts[i]}</span><span class="legend-pct">${sourcePercentages[i]}%</span></div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="dashboard-panel followups-panel">
+        <div class="panel-header"><h3>Upcoming Follow Ups</h3></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Customer</th><th>Phone</th><th>Status</th><th>Next Follow Up</th><th>Source</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              ${upcomingFollowUps.length > 0 ? upcomingFollowUps.map(c => `
+                <tr onclick="window.location.hash='#customer/${c.id}'" style="cursor:pointer">
+                  <td><div class="td-with-avatar">${renderAvatarCircle(c.fullName)}<span>${c.fullName}</span></div></td>
+                  <td>${c.phone}</td>
+                  <td>${renderStatusBadge(c.status)}</td>
+                  <td>${c.nextFollowUpDate}</td>
+                  <td>${c.source}</td>
+                  <td onclick="event.stopPropagation()">
+                    <div class="action-btns">
+                      <button class="btn-icon btn-phone" onclick="window.open('tel:${c.phone}')" title="Call"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+                      <button class="btn-icon btn-message" onclick="window.open('mailto:${c.email || ''}')" title="Message"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
+                      <button class="btn-icon btn-more" onclick="showRowMenu(event, '${c.id}')" title="More"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('') : '<tr><td colspan="6" class="empty-text">No upcoming follow ups</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Render donut chart
+  const canvas = document.getElementById('source-chart');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: SOURCES,
+        datasets: [{ data: sourceCounts, backgroundColor: sourceColors, borderWidth: 0 }]
+      },
+      options: { cutout: '65%', plugins: { legend: { display: false } } }
+    });
+  }
+}
+
+function showActivityModal() {
+  const html = `
+    <div class="modal-backdrop">
+      <div class="modal-panel modal-panel--wide">
+        <div class="modal-header">
+          <h2 class="modal-title">All Activity</h2>
+          <button class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="activity-list activity-list--modal">
+            ${activityLog.map(a => `
+              <div class="activity-item">
+                <div class="activity-dot" style="background:${{status_change: '#3B82F6', note_added: '#8B5CF6', follow_up: '#F59E0B', new_customer: '#10B981'}[a.type] || '#94A3B8'}"></div>
+                <div class="activity-content">
+                  <p><strong>${a.customerName}</strong> ${a.description}</p>
+                  <span class="activity-time">${formatTimeAgo(a.timestamp)}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-overlay').innerHTML = html;
+  document.body.classList.add('modal-open');
+  document.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  document.querySelector('.modal-backdrop').addEventListener('click', (e) => { if (e.target === document.querySelector('.modal-backdrop')) closeModal(); });
+  document.querySelector('.modal-panel').addEventListener('click', (e) => { e.stopPropagation(); });
+  document.addEventListener('keydown', handleEscapeKey);
+}
+
 /* === ROUTER === */
 const PAGE_NAMES = {
   "#dashboard": "Dashboard",
@@ -353,7 +566,7 @@ const PAGE_NAMES = {
 };
 
 const ROUTES = {
-  "#dashboard": () => {},
+  "#dashboard": renderDashboard,
   "#customers-all": () => {},
   "#customers-new-leads": () => {},
   "#customers-interested": () => {},
