@@ -1,0 +1,352 @@
+/* === 1. CSS CUSTOM PROPERTIES === */
+:root {
+  --color-sidebar-bg: #0F172A;
+  --color-sidebar-text: #94A3B8;
+  --color-sidebar-active: #3B82F6;
+  --color-sidebar-active-text: #FFFFFF;
+  --color-accent: #3B82F6;
+  --color-accent-hover: #2563EB;
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-text-muted: #94A3B8;
+
+  --status-new-lead: #3B82F6;
+  --status-interested: #F59E0B;
+  --status-hot-lead: #EF4444;
+  --status-follow-up: #8B5CF6;
+  --status-won: #10B981;
+  --status-lost: #6B7280;
+
+  --color-trend-up: #10B981;
+  --color-trend-down: #EF4444;
+
+  --font-xs: 11px;
+  --font-sm: 13px;
+  --font-base: 14px;
+  --font-md: 16px;
+  --font-lg: 24px;
+  --font-xl: 28px;
+  --font-2xl: 32px;
+}
+
+body.dark-mode {
+  /* placeholder — filled in Phase 8 */
+}
+
+/* === 2. BASE RESET === */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: var(--font-base);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === 3. LAYOUT === */
+#app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#sidebar {
+  width: 240px;
+  min-width: 240px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background: var(--color-sidebar-bg);
+  overflow-y: auto;
+  transition: width 0.3s ease;
+}
+
+#main-wrapper {
+  margin-left: 240px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#topbar {
+  height: 64px;
+  min-height: 64px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+}
+
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: var(--color-bg);
+}
+
+/* === 4. SIDEBAR === */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 20px 16px;
+}
+
+.sidebar-logo svg {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.sidebar-logo-text {
+  font-size: var(--font-md);
+  font-weight: 700;
+  color: var(--color-sidebar-active-text);
+  white-space: nowrap;
+}
+
+.sidebar-logo-highlight {
+  color: var(--color-accent);
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 16px 8px;
+}
+
+.sidebar-nav {
+  list-style: none;
+  padding: 0 8px;
+}
+
+.nav-section-label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-sidebar-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 12px 6px;
+  opacity: 0.6;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--color-sidebar-text);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  font-size: var(--font-sm);
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-sidebar-active-text);
+}
+
+.nav-item--active {
+  background: var(--color-sidebar-active);
+  color: var(--color-sidebar-active-text);
+}
+
+.nav-item--active svg {
+  color: var(--color-sidebar-active-text);
+}
+
+.nav-item span {
+  white-space: nowrap;
+}
+
+.nav-arrow {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.nav-parent-trigger .nav-arrow {
+  transition: transform 0.2s ease;
+}
+
+.submenu {
+  list-style: none;
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.submenu--open {
+  max-height: 300px;
+}
+
+.nav-child {
+  padding-left: 40px;
+  font-size: var(--font-sm);
+}
+
+.sidebar-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  cursor: pointer;
+  color: var(--color-sidebar-text);
+  transition: color 0.15s ease;
+}
+
+.sidebar-collapse-btn:hover {
+  color: var(--color-sidebar-active-text);
+}
+
+#app.sidebar-collapsed .nav-item span {
+  display: none;
+}
+
+#app.sidebar-collapsed .nav-child {
+  padding-left: 0;
+  justify-content: center;
+}
+
+#app.sidebar-collapsed .nav-parent-trigger .nav-arrow {
+  display: none;
+}
+
+#app.sidebar-collapsed .nav-section-label {
+  display: none;
+}
+
+#app.sidebar-collapsed .sidebar-logo-text {
+  display: none;
+}
+
+#app.sidebar-collapsed .sidebar-collapse-btn .collapse-icon {
+  transform: rotate(180deg);
+}
+
+#app.sidebar-collapsed .sidebar-divider {
+  margin: 0 8px 8px;
+}
+
+#app.sidebar-collapsed .sidebar-logo {
+  justify-content: center;
+}
+
+/* === 5. TOPBAR === */
+.topbar-title {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+
+.topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  width: 280px;
+}
+
+.topbar-search svg {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.topbar-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--font-sm);
+  color: var(--color-text-primary);
+  width: 100%;
+}
+
+.topbar-search input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.topbar-icon-btn {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: background 0.15s ease;
+}
+
+.topbar-icon-btn:hover {
+  background: var(--color-bg);
+}
+
+.notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--color-accent);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-sidebar-active);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* === 6. COMPONENTS === */
+/* placeholder — components added per phase */
+
+/* Sidebar collapsed state */
+#app.sidebar-collapsed #sidebar {
+  width: 64px;
+}
+
+#app.sidebar-collapsed #main-wrapper {
+  margin-left: 64px;
+}
