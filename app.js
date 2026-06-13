@@ -313,11 +313,11 @@ function renderSidebar() {
       const app = document.getElementById('app');
       const parent = trigger.closest('.nav-parent');
       const submenu = parent.querySelector('.submenu');
-      // Expand sidebar if collapsed, then open submenu
+      // Expand sidebar if collapsed
       if (app.classList.contains('sidebar-collapsed')) {
         app.classList.remove('sidebar-collapsed');
       }
-      submenu.classList.add('submenu--open');
+      submenu.classList.toggle('submenu--open');
     });
   });
 }
@@ -325,6 +325,10 @@ function renderSidebar() {
 function toggleSidebar() {
   const app = document.getElementById('app');
   app.classList.toggle('sidebar-collapsed');
+  // Close all submenus when collapsing
+  if (app.classList.contains('sidebar-collapsed')) {
+    document.querySelectorAll('.submenu').forEach(sub => sub.classList.remove('submenu--open'));
+  }
 }
 
 function updateSidebarActive(hash) {
