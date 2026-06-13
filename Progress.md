@@ -17,82 +17,84 @@
 - [x] **1.1 HTML Shell Initialization**
   - Create [index.html](file:///c:/Users/madka/OneDrive/Desktop/Coding/Reach-Out%20DashBoard/index.html) with core document structure.
   - Include `<head>` CDN links: Google Font 'Inter' and Chart.js.
-  - Establish `#app-container` layout block, `#sidebar` aside, `#content-wrapper`, `#topbar`, `#main-content`, and `#modal-container`.
+  - Establish `#app` layout block, `#sidebar` aside, `#main-wrapper`, `#topbar`, `#content`, and `#modal-overlay`.
 - [x] **1.2 CSS Variables & Foundations**
   - Define root variables in [style.css](file:///c:/Users/madka/OneDrive/Desktop/Coding/Reach-Out%20DashBoard/style.css) for all colors (navy sidebar, accent blue, light grey background, status badge tints).
-  - Add `body.dark-mode` overrides for dark mode colors.
+  - Add `body.dark-mode` placeholder for dark mode colors.
   - Establish base layout grid: fixed 240px sidebar, content wrapper adjusting `margin-left` and `width`.
 - [x] **1.3 Data Seeding Setup**
-  - Create [data.js](file:///c:/Users/madka/OneDrive/Desktop/Coding/Reach-Out%20DashBoard/data.js) containing `SEED_CUSTOMERS` (20 Egyptian records) and `SEED_ACTIVITY` (15 recent logs) arrays.
+  - Create [data.js](file:///c:/Users/madka/OneDrive/Desktop/Coding/Reach-Out%20DashBoard/data.js) containing `SAMPLE_CUSTOMERS` (20 Egyptian records) and `SAMPLE_ACTIVITY` (15 recent logs) arrays.
   - Define constant lists: `SOURCES` and `STATUSES` with display styles.
 - [x] **1.4 Logic Core Engine**
   - Create [app.js](file:///c:/Users/madka/OneDrive/Desktop/Coding/Reach-Out%20DashBoard/app.js) with state object, localStorage synchronizers (`loadData`/`saveData`), and basic `router()` skeleton.
   - Load scripts in order in `index.html`: `data.js` first, then `app.js`.
-  - Verify that the app opens in a browser, the sidebar is visible, and the console reports zero errors.
 
 ### Phase 2 — Sidebar & Navigation
 - [x] **2.1 Complete Sidebar Panel**
   - Render Logo element (SVG bar chart + "SalesHub").
-  - Render nav list with icons (Unicode or SVGs): Dashboard, Customers (submenu), Deals (submenu), Notes & Questions, Settings.
+  - Render nav list with icons (SVGs): Dashboard, Customers (submenu), Deals (submenu), Notes & Questions, Settings.
 - [x] **2.2 Collapsible Sidebar Menus**
-  - Wire Customers and Deals triggers to `toggleSubmenu()` in `app.js` using smooth CSS expansion.
+  - Wire Customers and Deals triggers to toggle submenu using smooth CSS expansion.
 - [x] **2.3 Hash-Based SPA Routing**
   - Bind `hashchange` and `DOMContentLoaded` listeners to trigger the `router()`.
   - Highlight current active nav item matching the URL hash in the sidebar.
 - [x] **2.4 Global Header (Topbar)**
-  - Render topbar layout: search bar (left), notification bell + bell count badge, chat icon, and user profile avatar with dropdown.
+  - Render topbar layout: page title, search input, notification bell with count badge, user avatar.
 - [x] **2.5 Sidebar Collapse Toggle**
-  - Wire footer collapse button to shrink sidebar to 64px (icons only), transition logo, hide text labels, and shift content wrapper margins.
+  - Wire collapse button to shrink sidebar to 64px (icons only), hide text labels, and shift content wrapper margins.
 
-### Phase 3 — Dashboard Page
-- [ ] **3.1 Stat Cards Grid**
+### Phase 3 — Add/Edit Customer Modal
+- [x] **3.1 Reusable Modal Layout**
+  - Render form fields (Name, Phone, Email, Company, Source, Status, Last Contact Date, Next Follow Up Date, Notes textarea).
+  - Add/Edit modes with proper title and submit button text.
+- [x] **3.2 Input Validation**
+  - Prevent submission if Name or Phone is blank; display red inline validation messages.
+- [x] **3.3 Close Event Triggers**
+  - Close modal when pressing `ESC`, clicking the backdrop overlay, clicking Cancel, or clicking the X button.
+- [x] **3.4 Data Submission Handler**
+  - **Add Mode:** Generate ID, push customer, log "added as new lead", save, and re-render.
+  - **Edit Mode:** Update customer by ID, log "profile updated", save, and re-render.
+- [x] **3.5 Modal Overlay Fix**
+  - Fixed `#modal-overlay` using `pointer-events: none` by default so it does not block page interactions.
+
+### Phase 4 — Dashboard Page
+- [ ] **4.1 Stat Cards Grid**
   - Render Row 1: Total Customers, New Leads, Interested, Hot Leads.
   - Render Row 2: Follow Ups, Won Deals, Lost Deals, Deal Value ($).
   - Read counters dynamically from state; calculate mock percentage trends; style status-icon colors.
-- [ ] **3.2 Recent Activity Panel**
-  - Fetch and render the last 10 activities from `state.activityLog` with status indicators.
+- [ ] **4.2 Recent Activity Panel**
+  - Fetch and render the last 10 activities from `activityLog` with status indicators.
   - Wire "View All" link to open a modal with the full history feed.
-- [ ] **3.3 Customers by Source Doughnut Chart**
+- [ ] **4.3 Customers by Source Doughnut Chart**
   - Implement Chart.js Doughnut on canvas.
   - Calculate source metrics and print custom HTML legend grid showing counts and percentages.
-- [ ] **3.4 Upcoming Follow Ups Panel**
+- [ ] **4.4 Upcoming Follow Ups Panel**
   - Filter customers with follow-up dates in the next 14 days, sorted by proximity.
   - Wire actions: Call button (`tel:` trigger), Message button (`mailto:` trigger), and 3-dot dropdowns.
 
-### Phase 4 — All Customers Page
-- [ ] **4.1 Table Shell & Controls**
+### Phase 5 — All Customers Page
+- [ ] **5.1 Table Shell & Controls**
   - Render All Customers page layout: title, search text-filter input, and "+ Add Customer" button.
-- [ ] **4.2 Customer Table Data Rendering**
+- [ ] **5.2 Customer Table Data Rendering**
   - Render list of customers showing avatar initials, name, phone, email, source, status, last contact, and actions.
-- [ ] **4.3 Live Table Search Filter**
+- [ ] **5.3 Live Table Search Filter**
   - Filter rows on-the-fly as user types in the search input (matching name, phone, or email).
-- [ ] **4.4 Column Sorting Engine**
-  - Enable header click handlers (`triggerSort`) to sort rows asc/desc and update ▲/▼ icons.
-- [ ] **4.5 Record Actions & Row Clicks**
+- [ ] **5.4 Column Sorting Engine**
+  - Enable header click handlers to sort rows asc/desc and update sort arrows.
+- [ ] **5.5 Record Actions & Row Clicks**
   - Direct row clicks to customer details `#customer/:id`.
   - Wire edit icon to show modal pre-filled; delete icon to pop confirm dialog, delete customer, log activity, and re-render.
   - Show "No customers found" empty state if no matching results exist.
 
-### Phase 5 — Status Filter Pages
-- [ ] **5.1 Reusable Table Rendering**
-  - Build `renderCustomerTable(filterFn, title, extraColumns)` in `app.js` to draw filtered tables dynamically.
-- [ ] **5.2 Basic Status Filters**
+### Phase 6 — Status Filter Pages
+- [ ] **6.1 Reusable Table Rendering**
+  - Build `renderCustomerTable(config)` in `app.js` to draw filtered tables dynamically.
+- [ ] **6.2 Basic Status Filters**
   - Implement New Leads, Interested Customers, Hot Leads, and Follow Ups status pages.
-- [ ] **5.3 Won Deals Extra Information**
+- [ ] **6.3 Won Deals Extra Information**
   - Render Won Deals page displaying extra columns: Deal Value ($) and Product Purchased.
-- [ ] **5.4 Lost Deals Extra Information**
+- [ ] **6.4 Lost Deals Extra Information**
   - Render Lost Deals page displaying extra column: Lost Reason.
-
-### Phase 6 — Add / Edit Customer Modal
-- [x] **6.1 Reusable Modal Layout**
-  - Render form fields (Name, Phone, Email, Company, Source, Status, Last Contact Date, Next Follow Up Date).
-- [x] **6.2 Input Validation**
-  - Prevent submission if Name or Phone is blank; display red validation messages.
-- [x] **6.3 Close Event Triggers**
-  - Close modal when pressing `ESC` or clicking the backdrop overlay.
-- [x] **6.4 Data Submission Handler**
-  - **Add Mode:** Generate UUID, push client, prepend initial note, log "added as new lead", save, and re-render.
-  - **Edit Mode:** Update customer info by ID, log "updated details", save, and re-render.
 
 ### Phase 7 — Customer Detail Page
 - [ ] **7.1 Two-Column Detail View**
@@ -105,7 +107,7 @@
 - [ ] **7.4 Note Deletion**
   - Wire `×` button to remove note from array, save to localStorage, and re-render notes feed.
 
-### Phase 8 — Notes Feed & Settings Page
+### Phase 8 — Notes & Settings
 - [ ] **8.1 Notes & Questions Aggregator**
   - Gather all notes from all customers, sort newest first, and render with clickable client name redirects.
   - Add search bar to live-filter note text and client names.
@@ -138,16 +140,16 @@
 
 ### Session 1 — Phase 1 Complete
 - Created `index.html` with HTML5 shell, Google Fonts (Inter), Chart.js CDN, and body structure.
-- Created `style.css` with CSS custom properties, base reset, layout grid (#app, #sidebar, #main-wrapper, #topbar, #content), and sidebar collapsed state.
-- Created `data.js` with SOURCES (8), STATUSES (6), STORAGE_KEYS, 20 sample customers (4 New Lead, 4 Interested, 3 Hot Lead, 3 Follow Up, 3 Won Deal, 3 Lost Deal), and 15 activity log entries.
-- Created `app.js` with state variables, loadData/saveData (localStorage sync), addActivity function, and hash-based router skeleton with empty route handlers.
+- Created `style.css` with CSS custom properties, base reset, layout grid, and sidebar collapsed state.
+- Created `data.js` with SOURCES (8), STATUSES (6), STORAGE_KEYS, 20 sample customers, and 15 activity log entries.
+- Created `app.js` with state variables, loadData/saveData (localStorage sync), addActivity function, and hash-based router skeleton.
 - **Blockers:** None
 - **Next:** Phase 2 — Sidebar & Navigation
 
 ### Session 2 — Phase 2 Complete
-- Added `renderSidebar()` to app.js with SVG bar chart logo, "SalesHub" branding, nav items (Dashboard, Customers submenu, Deals submenu, Notes & Questions, Settings), section labels, collapsible submenus, and collapse button.
+- Added `renderSidebar()` to app.js with SVG bar chart logo, "SalesHub" branding, all nav items with SVG icons, section labels, collapsible submenus, and collapse button.
 - Added `updateSidebarActive()` to highlight active nav item based on current hash.
-- Added `renderTopbar()` with page title, search input, notification bell with badge count, and user avatar placeholder ("AD").
+- Added `renderTopbar()` with page title, search input, notification bell with badge count, and user avatar placeholder.
 - Updated `router()` to call `updateSidebarActive()` and update page title via PAGE_NAMES map.
 - Added `toggleSidebar()` for collapse/expand functionality.
 - Added sidebar styles: logo, nav items, section labels, submenu transitions, collapse button, collapsed state rules.
@@ -162,5 +164,6 @@
 - Added `handleModalSubmit(existingCustomer)` — validates Name/Phone required, shows inline errors, handles Add mode (creates customer, logs activity) and Edit mode (updates customer, logs activity), saves to localStorage, re-renders current page.
 - Added event listeners: close button, cancel button, backdrop click, Escape key, submit button.
 - Added modal styles: backdrop, panel, header, body, footer, form fields, form row layout, select dropdown, textarea, validation errors, primary/secondary buttons, status badge, avatar circle, empty state.
+- Fixed `#modal-overlay` blocking all page clicks by adding `pointer-events: none` (enabled only when `body.modal-open`).
 - **Blockers:** None
 - **Next:** Phase 4 — Dashboard Page
