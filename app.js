@@ -4,6 +4,9 @@ let activityLog = [];
 let settings = {};
 let currentRoute = "";
 let chartInstance = null;
+let currentSearchQuery = "";
+let sortColumn = "fullName";
+let sortDir = "asc";
 
 /* === DATA LAYER === */
 function loadData() {
@@ -551,6 +554,104 @@ function showActivityModal() {
   document.addEventListener('keydown', handleEscapeKey);
 }
 
+/* === ALL CUSTOMERS PAGE === */
+function sortCustomers(column) {
+  if (sortColumn === column) {
+    sortDir = sortDir === "asc" ? "desc" : "asc";
+  } else {
+    sortColumn = column;
+    sortDir = "asc";
+  }
+  renderAllCustomers();
+}
+
+function renderAllCustomers() {
+  let filtered = customers.filter(c =>
+    c.fullName.toLowerCase().includes(currentSearchQuery) ||
+    c.phone.includes(currentSearchQuery) ||
+    (c.email && c.email.toLowerCase().includes(currentSearchQuery))
+  );
+
+  filtered.sort((a, b) => {
+    const aVal = (a[sortColumn] || "").toString().toLowerCase();
+    const bVal = (b[sortColumn] || "").toString().toLowerCase();
+    return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+  });
+
+  const arrow = (col) => {
+    if (sortColumn !== col) return '<span class="sort-arrow"></span>';
+    return sortDir === "asc" ? '<span class="sort-arrow">↑</span>' : '<span class="sort-arrow">↓</span>';
+  };
+
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>All Customers</h2>
+        <span class="page-count">(${filtered.length})</span>
+      </div>
+      <div class="page-header-right">
+        <div class="page-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="customer-search" placeholder="Search customers..." value="${currentSearchQuery}">
+        </div>
+        <button class="btn-primary" onclick="showCustomerModal()">+ Add Customer</button>
+      </div>
+    </div>
+    <div class="table-card">
+      ${filtered.length > 0 ? `
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th onclick="sortCustomers('fullName')">Name ${arrow('fullName')}</th>
+                <th onclick="sortCustomers('phone')">Phone ${arrow('phone')}</th>
+                <th onclick="sortCustomers('email')">Email ${arrow('email')}</th>
+                <th onclick="sortCustomers('source')">Source ${arrow('source')}</th>
+                <th onclick="sortCustomers('status')">Status ${arrow('status')}</th>
+                <th onclick="sortCustomers('lastContactDate')">Last Contact ${arrow('lastContactDate')}</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filtered.map(c => `
+                <tr onclick="window.location.hash='#customer/${c.id}'" style="cursor:pointer">
+                  <td><div class="td-with-avatar">${renderAvatarCircle(c.fullName)}<span>${c.fullName}</span></div></td>
+                  <td>${c.phone}</td>
+                  <td>${c.email || '—'}</td>
+                  <td>${c.source}</td>
+                  <td>${renderStatusBadge(c.status)}</td>
+                  <td>${c.lastContactDate || '—'}</td>
+                  <td onclick="event.stopPropagation()">
+                    <div class="action-btns">
+                      <button class="btn-icon btn-edit" onclick="showCustomerModal(customers.find(cu => cu.id === '${c.id}'))" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                      <button class="btn-icon btn-delete" onclick="deleteCustomer('${c.id}')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : `
+        <div class="empty-state">
+          <p>No customers found.</p>
+          <button onclick="document.getElementById('customer-search').value=''; currentSearchQuery=''; renderAllCustomers();">Clear Search</button>
+        </div>
+      `}
+    </div>
+  `;
+
+  // Attach search listener
+  const searchInput = document.getElementById('customer-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      currentSearchQuery = e.target.value.toLowerCase();
+      renderAllCustomers();
+    });
+  }
+}
+
 /* === ROUTER === */
 const PAGE_NAMES = {
   "#dashboard": "Dashboard",
@@ -567,7 +668,7 @@ const PAGE_NAMES = {
 
 const ROUTES = {
   "#dashboard": renderDashboard,
-  "#customers-all": null,
+  "#customers-all": renderAllCustomers,
   "#customers-new-leads": null,
   "#customers-interested": null,
   "#customers-hot-leads": null,
