@@ -262,7 +262,6 @@ function renderSidebar() {
           <li class="nav-item nav-child" data-route="#customers-interested"><span>Interested Customers</span></li>
           <li class="nav-item nav-child" data-route="#customers-hot-leads"><span>Hot Leads</span></li>
           <li class="nav-item nav-child" data-route="#customers-follow-ups"><span>Follow Ups</span></li>
-          <li class="nav-item nav-child" data-route="#deals-lost"><span>Lost Deals</span></li>
         </ul>
       </li>
       <li class="nav-section-label">DEALS</li>
