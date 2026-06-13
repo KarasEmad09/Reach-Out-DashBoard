@@ -5,8 +5,8 @@
 ---
 
 ## Current Status
-**Active Phase:** Phase 3 — Add/Edit Customer Modal
-**Overall Completion:** 22%
+**Active Phase:** Phase 4 — Dashboard Page
+**Overall Completion:** 33%
 **Last Update:** June 13, 2026
 
 ---
@@ -84,13 +84,13 @@
   - Render Lost Deals page displaying extra column: Lost Reason.
 
 ### Phase 6 — Add / Edit Customer Modal
-- [ ] **6.1 Reusable Modal Layout**
+- [x] **6.1 Reusable Modal Layout**
   - Render form fields (Name, Phone, Email, Company, Source, Status, Last Contact Date, Next Follow Up Date).
-- [ ] **6.2 Input Validation**
+- [x] **6.2 Input Validation**
   - Prevent submission if Name or Phone is blank; display red validation messages.
-- [ ] **6.3 Close Event Triggers**
+- [x] **6.3 Close Event Triggers**
   - Close modal when pressing `ESC` or clicking the backdrop overlay.
-- [ ] **6.4 Data Submission Handler**
+- [x] **6.4 Data Submission Handler**
   - **Add Mode:** Generate UUID, push client, prepend initial note, log "added as new lead", save, and re-render.
   - **Edit Mode:** Update customer info by ID, log "updated details", save, and re-render.
 
@@ -154,3 +154,13 @@
 - Added topbar styles: title, search input, notification bell, avatar circle.
 - **Blockers:** None
 - **Next:** Phase 3 — Add/Edit Customer Modal
+
+### Session 3 — Phase 3 Complete
+- Added `generateId(prefix)` to app.js for generating unique IDs.
+- Added `showCustomerModal(customer = null)` — renders modal with Add/Edit modes, form fields (Name, Phone, Email, Company, Source, Status, Last Contact Date, Next Follow Up Date, Notes textarea).
+- Added `closeModal()` — clears modal overlay, removes modal-open class, removes Escape key listener.
+- Added `handleModalSubmit(existingCustomer)` — validates Name/Phone required, shows inline errors, handles Add mode (creates customer, logs activity) and Edit mode (updates customer, logs activity), saves to localStorage, re-renders current page.
+- Added event listeners: close button, cancel button, backdrop click, Escape key, submit button.
+- Added modal styles: backdrop, panel, header, body, footer, form fields, form row layout, select dropdown, textarea, validation errors, primary/secondary buttons, status badge, avatar circle, empty state.
+- **Blockers:** None
+- **Next:** Phase 4 — Dashboard Page
