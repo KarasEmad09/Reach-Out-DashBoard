@@ -759,12 +759,12 @@ window.addEventListener("DOMContentLoaded", () => {
         if (window.location.hash !== "#customers-all") {
           window.location.hash = "#customers-all";
         } else {
-          renderAllCustomers();
+          updateCustomerTable();
         }
       } else {
         currentSearchQuery = "";
         if (window.location.hash === "#customers-all") {
-          renderAllCustomers();
+          updateCustomerTable();
         }
       }
     });
