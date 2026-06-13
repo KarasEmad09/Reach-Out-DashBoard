@@ -35,6 +35,7 @@ function loadData() {
     settings = { theme: "light" };
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   }
+  applyTheme();
 }
 
 function saveData() {
@@ -333,7 +334,7 @@ function renderTopbar() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="global-search" placeholder="Search customers...">
       </div>
-      <button id="notif-bell" class="topbar-icon-btn">
+      <button id="notif-bell" class="topbar-icon-btn" onclick="toggleNotifDropdown()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="notif-badge">${activityLog.length}</span>
       </button>
@@ -892,6 +893,162 @@ function deleteNote(customerId, noteId) {
   renderCustomerDetail(customerId);
 }
 
+/* === NOTES PAGE === */
+let notesSearchQuery = "";
+
+function getFilteredNotes() {
+  const allNotes = [];
+  customers.forEach(customer => {
+    (customer.notes || []).forEach(note => {
+      allNotes.push({ ...note, customerName: customer.fullName, customerId: customer.id });
+    });
+  });
+  allNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return allNotes.filter(n =>
+    n.customerName.toLowerCase().includes(notesSearchQuery) ||
+    n.text.toLowerCase().includes(notesSearchQuery)
+  );
+}
+
+function buildNotesFeedHtml(filtered) {
+  if (filtered.length === 0) return '<div class="empty-state"><p>No notes found.</p></div>';
+  return filtered.map(note => `
+    <div class="note-feed-item">
+      ${renderAvatarCircle(note.customerName)}
+      <div class="note-feed-body">
+        <p class="note-feed-customer">
+          <a href="#" onclick="event.preventDefault(); window.location.hash='#customer/${note.customerId}'">${note.customerName}</a>
+        </p>
+        <p class="note-feed-text">${note.text}</p>
+        <p class="note-feed-date">${formatTimeAgo(note.createdAt)}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateNotesFeed() {
+  const filtered = getFilteredNotes();
+  const countEl = document.querySelector('.page-count');
+  const feedEl = document.querySelector('.notes-feed');
+  if (countEl) countEl.textContent = `(${filtered.length})`;
+  if (feedEl) feedEl.innerHTML = buildNotesFeedHtml(filtered);
+}
+
+function renderNotes() {
+  notesSearchQuery = "";
+  const filtered = getFilteredNotes();
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Notes & Questions</h2>
+        <span class="page-count">(${filtered.length})</span>
+      </div>
+      <div class="page-header-right">
+        <div class="page-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="notes-search" placeholder="Search notes or customers..." value="">
+        </div>
+      </div>
+    </div>
+    <div class="notes-feed">
+      ${buildNotesFeedHtml(filtered)}
+    </div>
+  `;
+
+  const searchInput = document.getElementById('notes-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      notesSearchQuery = e.target.value.toLowerCase();
+      updateNotesFeed();
+    });
+  }
+}
+
+/* === SETTINGS PAGE === */
+function renderSettings() {
+  const currentTheme = settings.theme || "light";
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div class="page-header-left">
+        <h2>Settings</h2>
+      </div>
+    </div>
+    <div class="settings-section">
+      <h3>Appearance</h3>
+      <p class="settings-desc">Choose your preferred theme for the dashboard.</p>
+      <div class="theme-cards">
+        <div class="theme-card ${currentTheme === 'light' ? 'theme-card--active' : ''}" onclick="setTheme('light')">
+          <div class="theme-card-preview theme-card-preview--light">
+            <div class="theme-preview-sidebar"></div>
+            <div class="theme-preview-content">
+              <div class="theme-preview-bar"></div>
+              <div class="theme-preview-card"></div>
+            </div>
+          </div>
+          <span class="theme-card-label">Light Mode</span>
+        </div>
+        <div class="theme-card ${currentTheme === 'dark' ? 'theme-card--active' : ''}" onclick="setTheme('dark')">
+          <div class="theme-card-preview theme-card-preview--dark">
+            <div class="theme-preview-sidebar"></div>
+            <div class="theme-preview-content">
+              <div class="theme-preview-bar"></div>
+              <div class="theme-preview-card"></div>
+            </div>
+          </div>
+          <span class="theme-card-label">Dark Mode</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function setTheme(theme) {
+  settings.theme = theme;
+  saveData();
+  applyTheme();
+  renderSettings();
+}
+
+function applyTheme() {
+  document.body.classList.toggle('dark-mode', settings.theme === 'dark');
+}
+
+/* === NOTIFICATION DROPDOWN === */
+function toggleNotifDropdown() {
+  const existing = document.getElementById('notif-dropdown');
+  if (existing) { existing.remove(); return; }
+
+  const last5 = activityLog.slice(0, 5);
+  const html = `
+    <div id="notif-dropdown" class="notif-dropdown">
+      <h4>Recent Activity</h4>
+      ${last5.length > 0 ? last5.map(a => `
+        <div class="notif-item">
+          <strong>${a.customerName}</strong> ${a.description}
+          <span class="notif-time">${formatTimeAgo(a.timestamp)}</span>
+        </div>
+      `).join('') : '<p class="notif-empty">No recent activity.</p>'}
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  const bell = document.getElementById('notif-bell');
+  const rect = bell.getBoundingClientRect();
+  const dropdown = document.getElementById('notif-dropdown');
+  dropdown.style.top = (rect.bottom + 8) + 'px';
+  dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!dropdown.contains(e.target) && e.target.id !== 'notif-bell' && !e.target.closest('#notif-bell')) {
+        dropdown.remove();
+        document.removeEventListener('click', handler);
+      }
+    });
+  }, 0);
+}
+
 /* === ROUTER === */
 const PAGE_NAMES = {
   "#dashboard": "Dashboard",
@@ -915,8 +1072,8 @@ const ROUTES = {
   "#customers-follow-ups": renderFollowUps,
   "#deals-won": renderWonDeals,
   "#deals-lost": renderLostDeals,
-  "#notes": null,
-  "#settings": null
+  "#notes": renderNotes,
+  "#settings": renderSettings
 };
 
 function router() {
