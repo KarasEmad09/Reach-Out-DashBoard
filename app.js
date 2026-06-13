@@ -567,20 +567,26 @@ const PAGE_NAMES = {
 
 const ROUTES = {
   "#dashboard": renderDashboard,
-  "#customers-all": () => {},
-  "#customers-new-leads": () => {},
-  "#customers-interested": () => {},
-  "#customers-hot-leads": () => {},
-  "#customers-follow-ups": () => {},
-  "#deals-won": () => {},
-  "#deals-lost": () => {},
-  "#notes": () => {},
-  "#settings": () => {}
+  "#customers-all": null,
+  "#customers-new-leads": null,
+  "#customers-interested": null,
+  "#customers-hot-leads": null,
+  "#customers-follow-ups": null,
+  "#deals-won": null,
+  "#deals-lost": null,
+  "#notes": null,
+  "#settings": null
 };
 
 function router() {
   const hash = window.location.hash || "#dashboard";
   currentRoute = hash;
+
+  // Destroy chart if leaving dashboard
+  if (hash !== "#dashboard" && chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
 
   // Update page title
   const titleEl = document.getElementById('page-title');
@@ -591,14 +597,18 @@ function router() {
   // Update sidebar active state
   updateSidebarActive(hash);
 
-  // Call route handler
+  // Call route handler or clear content
   if (ROUTES[hash]) {
     ROUTES[hash]();
   } else if (hash.startsWith("#customer/")) {
     const id = hash.replace("#customer/", "");
     if (typeof renderCustomerDetail === "function") {
       renderCustomerDetail(id);
+    } else {
+      document.getElementById('content').innerHTML = '';
     }
+  } else {
+    document.getElementById('content').innerHTML = '';
   }
 }
 
