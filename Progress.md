@@ -245,3 +245,6 @@
   - **≤1024px (tablet):** stat cards 2-col, detail columns stack, theme cards wrap
   - **≤768px (mobile):** sidebar hidden off-screen with toggle, main wrapper full width, stat cards 2-col, page headers stack, tables scroll horizontally, detail fields stack, modals near-fullscreen, form rows single column, dashboard grid single column
   - **≤480px (small mobile):** stat cards single column, topbar search/avatar hidden, compact buttons
+- Added tablet-specific breakpoints:
+  - **≤1024px (large tablet):** sidebar shrinks to 200px, stat cards 2-col, dashboard grid single column, tables scroll, modals narrower
+  - **≤900px (small tablet):** sidebar auto-collapses to 64px icons-only (text labels hidden), topbar title shrinks
