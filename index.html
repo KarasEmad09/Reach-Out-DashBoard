@@ -1,23 +1,367 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SalesHub CRM</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SalesHub CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --color-sidebar-bg:#0F172A;--color-sidebar-text:#94A3B8;--color-sidebar-active:#3B82F6;
+  --color-sidebar-active-text:#FFF;--color-accent:#3B82F6;--color-accent-hover:#2563EB;
+  --color-bg:#F8FAFC;--color-surface:#FFF;--color-border:#E2E8F0;
+  --color-text-primary:#0F172A;--color-text-secondary:#64748B;--color-text-muted:#94A3B8;
+  --color-trend-up:#10B981;--color-trend-down:#EF4444;
+  --font-xs:11px;--font-sm:13px;--font-base:14px;--font-md:16px;--font-lg:24px;--font-xl:28px;--font-2xl:32px;
+}
+body.dark-mode {
+  --color-bg:#0F172A;--color-surface:#1E293B;--color-border:#334155;
+  --color-text-primary:#F1F5F9;--color-text-secondary:#94A3B8;--color-text-muted:#64748B;
+  --color-sidebar-bg:#020617;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;font-size:var(--font-base);background:var(--color-bg);color:var(--color-text-primary);min-height:100vh}
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:240px;min-width:240px;height:100vh;position:fixed;left:0;top:0;background:var(--color-sidebar-bg);overflow-y:auto;transition:width 0.3s ease;z-index:100}
+#main-wrapper{margin-left:240px;transition:margin-left 0.3s ease;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+#topbar{height:64px;min-height:64px;background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;padding:0 24px}
+#content{flex:1;overflow-y:auto;padding:24px;background:var(--color-bg)}
+#modal-overlay{position:fixed;inset:0;z-index:1000;pointer-events:none}
+body.modal-open #modal-overlay{pointer-events:all}
+
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:3000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:8px;color:#FFF;font-size:13px;font-weight:500;animation:slideIn .3s ease;max-width:360px;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.toast--success{background:#10B981}.toast--error{background:#EF4444}
+.toast--warning{background:#F59E0B}.toast--info{background:#3B82F6}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--color-bg);padding:24px}
+.login-card{background:var(--color-surface);border-radius:16px;border:1px solid var(--color-border);padding:40px 36px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.login-card h1{font-size:var(--font-xl);font-weight:700;text-align:center;margin-bottom:4px}
+.login-subtitle{font-size:var(--font-sm);color:var(--color-text-secondary);text-align:center;margin-bottom:28px}
+.login-logo{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px}
+.login-logo svg{color:var(--color-accent)}
+.login-logo span{font-size:var(--font-md);font-weight:700}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.form-label{font-size:13px;font-weight:500;color:var(--color-text-secondary)}
+.form-input{padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:var(--color-bg);width:100%;transition:border-color .15s ease,box-shadow .15s ease}
+.form-input:focus{outline:none;border-color:var(--color-accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.form-error{font-size:12px;color:#EF4444;display:none;margin-top:2px}
+.form-error.visible{display:block}
+.btn-primary{display:block;width:100%;padding:12px 20px;background:var(--color-accent);color:#FFF;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s ease,transform .1s ease}
+.btn-primary:hover{background:var(--color-accent-hover);transform:translateY(-1px)}
+.login-error{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;color:#991B1B;font-size:13px;margin-bottom:16px;display:none}
+.login-error.visible{display:block}
+</style>
 </head>
 <body>
-  <div id="app">
-    <nav id="sidebar"></nav>
-    <div id="main-wrapper">
-      <header id="topbar"></header>
-      <main id="content"></main>
-    </div>
+<div id="app" style="display:none">
+  <nav id="sidebar"></nav>
+  <div id="main-wrapper">
+    <header id="topbar"></header>
+    <main id="content"></main>
   </div>
-  <div id="modal-overlay"></div>
-  <script src="data.js"></script>
-  <script src="app.js"></script>
+</div>
+<div id="modal-overlay"></div>
+
+<script>
+/* ============================
+   APPCONFIG
+   ============================ */
+const AppConfig = {
+  SOURCES: ["Facebook Ads","Instagram Ads","Website Form","Referral","WhatsApp","LinkedIn","Cold Outreach","Manual Entry"],
+  STATUSES: [
+    {key:"New Lead",color:"#3B82F6",bg:"#EFF6FF"},{key:"Interested Customer",color:"#F59E0B",bg:"#FFFBEB"},
+    {key:"Hot Lead",color:"#EF4444",bg:"#FEF2F2"},{key:"Follow Up",color:"#8B5CF6",bg:"#F5F3FF"},
+    {key:"Won Deal",color:"#10B981",bg:"#ECFDF5"},{key:"Lost Deal",color:"#6B7280",bg:"#F9FAFB"}
+  ],
+  ROLES:{SUPER_ADMIN:"super_admin",ADMIN:"admin",EMPLOYEE:"employee"},
+  PERMISSIONS:{
+    super_admin:["all"],admin:["manage_customers","manage_tasks","view_reports","view_audit"],
+    employee:["view_assigned_customers","view_assigned_tasks","add_notes"]
+  },
+  TASK_STATUSES:["todo","in_progress","done","overdue"],
+  TASK_PRIORITIES:[
+    {key:"low",color:"#6B7280",label:"Low"},{key:"medium",color:"#F59E0B",label:"Medium"},
+    {key:"high",color:"#EF4444",label:"High"},{key:"urgent",color:"#DC2626",label:"Urgent"}
+  ],
+  DB_NAME:"saleshub_db",DB_VERSION:1,SESSION_KEY:"saleshub_session",
+  TOAST_DURATION:3000,RAGE_CLICK_THRESHOLD:3,RAGE_CLICK_WINDOW:1000
+};
+
+/* ============================
+   APPDB — IndexedDB
+   ============================ */
+const AppDB = (() => {
+  let db = null;
+  async function init() {
+    return new Promise((resolve,reject) => {
+      const r = indexedDB.open(AppConfig.DB_NAME,AppConfig.DB_VERSION);
+      r.onerror = () => reject(r.error);
+      r.onsuccess = () => { db = r.result; resolve(db); };
+      r.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        let s = d.createObjectStore("users",{keyPath:"id",autoIncrement:true});
+        s.createIndex("email_idx","email",{unique:true});s.createIndex("role_idx","role",{unique:false});
+        s = d.createObjectStore("roles",{keyPath:"id",autoIncrement:true});
+        s.createIndex("key_idx","key",{unique:true});
+        s = d.createObjectStore("customers",{keyPath:"id"});
+        s.createIndex("name_idx","fullName");s.createIndex("source_idx","source");
+        s.createIndex("status_idx","status");s.createIndex("assigned_idx","assignedTo");
+        s = d.createObjectStore("customer_notes",{keyPath:"id",autoIncrement:true});
+        s.createIndex("customer_idx","customerId");s.createIndex("user_idx","userId");s.createIndex("created_idx","createdAt");
+        s = d.createObjectStore("tasks",{keyPath:"id",autoIncrement:true});
+        s.createIndex("assignee_idx","assignedTo");s.createIndex("customer_idx","customerId");
+        s.createIndex("status_idx","status");s.createIndex("priority_idx","priority");
+        s = d.createObjectStore("notifications",{keyPath:"id",autoIncrement:true});
+        s.createIndex("user_idx","userId");s.createIndex("type_idx","type");
+        s.createIndex("read_idx","isRead");s.createIndex("created_idx","createdAt");
+        s = d.createObjectStore("audit_logs",{keyPath:"id",autoIncrement:true});
+        s.createIndex("user_idx","userId");s.createIndex("action_idx","action");
+        s.createIndex("entity_idx","entityType");s.createIndex("ts_idx","timestamp");
+        s = d.createObjectStore("analytics_events",{keyPath:"id",autoIncrement:true});
+        s.createIndex("user_idx","userId");s.createIndex("event_idx","eventType");
+        s.createIndex("page_idx","page");s.createIndex("ts_idx","timestamp");
+        d.createObjectStore("settings",{keyPath:"key"});
+      };
+    });
+  }
+  function tx(s,m){return db.transaction(s,m).objectStore(s)}
+  function getAll(s){return new Promise((rs,rj)=>{const q=tx(s,"readonly").getAll();q.onsuccess=()=>rs(q.result);q.onerror=()=>rj(q.error)})}
+  function get(s,k){return new Promise((rs,rj)=>{const q=tx(s,"readonly").get(k);q.onsuccess=()=>rs(q.result);q.onerror=()=>rj(q.error)})}
+  function put(s,d){return new Promise((rs,rj)=>{const q=tx(s,"readwrite").put(d);q.onsuccess=()=>rs(q.result);q.onerror=()=>rj(q.error)})}
+  function del(s,k){return new Promise((rs,rj)=>{const q=tx(s,"readwrite").delete(k);q.onsuccess=()=>rs();q.onerror=()=>rj(q.error)})}
+  function count(s){return new Promise((rs,rj)=>{const q=tx(s,"readonly").count();q.onsuccess=()=>rs(q.result);q.onerror=()=>rj(q.error)})}
+  function getCustomers(){return getAll("customers")}
+  function getCustomer(id){return get("customers",id)}
+  function saveCustomer(c){return put("customers",{...c,updatedAt:new Date().toISOString()})}
+  function deleteCustomer(id){return del("customers",id)}
+  function getNotes(cid){return getAll("customer_notes").then(n=>n.filter(x=>x.customerId===cid))}
+  function saveNote(n){return put("customer_notes",{...n,createdAt:new Date().toISOString()})}
+  function deleteNote(id){return del("customer_notes",id)}
+  function getTasks(){return getAll("tasks")}
+  function getTask(id){return get("tasks",id)}
+  function saveTask(t){return put("tasks",{...t,updatedAt:new Date().toISOString()})}
+  function deleteTask(id){return del("tasks",id)}
+  function getNotifications(uid){return getAll("notifications").then(n=>n.filter(x=>x.userId===uid))}
+  function saveNotification(n){return put("notifications",{...n,createdAt:new Date().toISOString()})}
+  function markNotifRead(id){return get("notifications",id).then(n=>{n.isRead=true;return put("notifications",n)})}
+  function addAuditLog(uid,action,etype,eid,det){return put("audit_logs",{userId:uid,action,entityType:etype,entityId:eid,details:det,timestamp:new Date().toISOString()})}
+  function getAuditLogs(){return getAll("audit_logs")}
+  function addAnalyticsEvent(uid,etype,page,target,meta){return put("analytics_events",{userId:uid,eventType:etype,page,target,metadata:JSON.stringify(meta||{}),timestamp:new Date().toISOString()})}
+  function getAnalyticsEvents(){return getAll("analytics_events")}
+  function getSetting(k){return get("settings",k)}
+  function saveSetting(k,v){return put("settings",{key:k,value:v})}
+
+  async function seedAll(){
+    if(await count("customers") > 0) return;
+    const enc = new TextEncoder();
+    const hb = await crypto.subtle.digest("SHA-256",enc.encode("admin123"));
+    const ph = Array.from(new Uint8Array(hb)).map(b=>b.toString(16).padStart(2,"0")).join("");
+    await put("roles",{key:"super_admin",label:"Super Admin",permissions:["all"]});
+    await put("roles",{key:"admin",label:"Admin",permissions:["manage_customers","manage_tasks","view_reports","view_audit"]});
+    await put("roles",{key:"employee",label:"Employee",permissions:["view_assigned_customers","view_assigned_tasks","add_notes"]});
+    await put("users",{name:"Super Admin",email:"admin@saleshub.com",passwordHash:ph,role:"super_admin",createdAt:new Date().toISOString(),avatar:"SA"});
+
+    const sc = [
+      {id:"cust_101",fullName:"Mohamed Salah",phone:"+20 100 111 1111",email:"mohamed@ex.com",company:"TechNile",source:"Facebook Ads",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-06",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_102",fullName:"Nour Ibrahim",phone:"+20 101 222 2222",email:"nour@ex.com",company:"CairoSoft",source:"Website Form",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_103",fullName:"Ahmed Hassan",phone:"+20 102 333 3333",email:"ahmed@ex.com",company:"DeltaTech",source:"Referral",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_104",fullName:"Khaled Mostafa",phone:"+20 103 444 4444",email:"khaled@ex.com",company:"Nile Solutions",source:"Cold Outreach",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-31",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_105",fullName:"Sara Adel",phone:"+20 104 555 5555",email:"sara@ex.com",company:"EduPro",source:"Instagram Ads",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-06",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_106",fullName:"Omar Khaled",phone:"+20 105 666 6666",email:"omar@ex.com",company:"MediSys",source:"Website Form",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_107",fullName:"Layla Mansour",phone:"+20 106 777 7777",email:"layla@ex.com",company:"GreenEnergy",source:"LinkedIn",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-30",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_108",fullName:"Youssef Karim",phone:"+20 107 888 8888",email:"youssef@ex.com",company:"SkyNet",source:"WhatsApp",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-29",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_109",fullName:"Amr Farouk",phone:"+20 108 999 9999",email:"amr@ex.com",company:"BuildRight",source:"Facebook Ads",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_110",fullName:"Hossam Eddin",phone:"+20 109 000 1111",email:"hossam@ex.com",company:"FinanceHub",source:"LinkedIn",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_111",fullName:"Fatma Ali",phone:"+20 110 222 3333",email:"fatma@ex.com",company:"DesignLab",source:"Referral",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_112",fullName:"Mona Said",phone:"+20 111 333 4444",email:"mona@ex.com",company:"FoodChain",source:"Instagram Ads",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_113",fullName:"Tarek Nasser",phone:"+20 112 444 5555",email:"tarek@ex.com",company:"SafeGuard",source:"Cold Outreach",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_114",fullName:"Dina Rashed",phone:"+20 113 555 6666",email:"dina@ex.com",company:"TravelPlus",source:"Website Form",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_115",fullName:"Nadia Youssef",phone:"+20 114 666 7777",email:"nadia@ex.com",company:"SmartWare",source:"Referral",status:"Won Deal",assignedTo:null,dealValue:15000,product:"Enterprise Plan",lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_116",fullName:"Samir Helmy",phone:"+20 115 777 8888",email:"samir@ex.com",company:"CloudBase",source:"LinkedIn",status:"Won Deal",assignedTo:null,dealValue:8500,product:"Professional Plan",lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_117",fullName:"Heba Mahmoud",phone:"+20 116 888 9999",email:"heba@ex.com",company:"DataFlow",source:"Facebook Ads",status:"Won Deal",assignedTo:null,dealValue:4200,product:"Starter Plan",lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_118",fullName:"Ramy Ezzat",phone:"+20 117 999 0000",email:"ramy@ex.com",company:"AgriCorp",source:"WhatsApp",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"Went with competitor",lastContactDate:"2024-06-03",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_119",fullName:"Sherine Adel",phone:"+20 118 000 1112",email:"sherine@ex.com",company:"FashionLine",source:"Instagram Ads",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"Budget constraints",lastContactDate:"2024-06-02",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()},
+      {id:"cust_120",fullName:"Karim Fouad",phone:"+20 119 111 2223",email:"karim@ex.com",company:"AutoMax",source:"Cold Outreach",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"No response after follow-up",lastContactDate:"2024-06-01",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()}
+    ];
+    for(const c of sc) await put("customers",c);
+    for(let i=101;i<=120;i++) await put("customer_notes",{customerId:"cust_"+i,userId:1,text:"Initial contact made.",createdAt:new Date().toISOString()});
+    await put("tasks",{title:"Follow up with Mohamed Salah",description:"Call to discuss pricing",assignedTo:null,customerId:"cust_101",status:"todo",priority:"high",dueDate:"2024-06-08",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    await put("tasks",{title:"Send proposal to Sara Adel",description:"Prepare and email proposal",assignedTo:null,customerId:"cust_105",status:"in_progress",priority:"urgent",dueDate:"2024-06-05",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    await put("tasks",{title:"Demo call with Amr Farouk",description:"Schedule product demo",assignedTo:null,customerId:"cust_109",status:"todo",priority:"medium",dueDate:"2024-06-07",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    await put("tasks",{title:"Review competitor analysis",description:"Research pricing for lost deal",assignedTo:null,customerId:"cust_118",status:"todo",priority:"low",dueDate:"2024-06-10",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    await put("tasks",{title:"Onboarding for Nadia Youssef",description:"Start enterprise onboarding",assignedTo:null,customerId:"cust_115",status:"in_progress",priority:"medium",dueDate:"2024-06-06",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    console.log("Seed: 3 roles, 1 admin, 20 customers, 20 notes, 5 tasks");
+  }
+
+  return{init,getAll,get,put,del,count,getCustomers,getCustomer,saveCustomer,deleteCustomer,getNotes,saveNote,deleteNote,getTasks,getTask,saveTask,deleteTask,getNotifications,saveNotification,markNotifRead,addAuditLog,getAuditLogs,addAnalyticsEvent,getAnalyticsEvents,getSetting,saveSetting,seedAll};
+})();
+
+/* ============================
+   APPAUTH
+   ============================ */
+const AppAuth = (() => {
+  async function hashPw(pw) {
+    const e = new TextEncoder();
+    const b = await crypto.subtle.digest("SHA-256",e.encode(pw));
+    return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
+  }
+  async function login(email,pw) {
+    const users = await AppDB.getAll("users");
+    const u = users.find(x=>x.email===email);
+    if(!u) throw new Error("Invalid email or password");
+    if(await hashPw(pw) !== u.passwordHash) throw new Error("Invalid email or password");
+    const s = {id:u.id,name:u.name,email:u.email,role:u.role,avatar:u.avatar||u.name.charAt(0).toUpperCase()};
+    sessionStorage.setItem(AppConfig.SESSION_KEY,JSON.stringify(s));
+    return s;
+  }
+  function logout(){sessionStorage.removeItem(AppConfig.SESSION_KEY);location.reload()}
+  function getSession(){const r=sessionStorage.getItem(AppConfig.SESSION_KEY);if(!r)return null;try{return JSON.parse(r)}catch{return null}}
+  function isAuth(){return getSession()!==null}
+  function getRole(){const s=getSession();return s?s.role:null}
+  function hasPerm(p){const r=getRole();if(!r)return false;if(r===AppConfig.ROLES.SUPER_ADMIN)return true;return(AppConfig.PERMISSIONS[r]||[]).includes(p)}
+  async function createUser(d){const h=await hashPw(d.password);return AppDB.put("users",{name:d.name,email:d.email,passwordHash:h,role:d.role||AppConfig.ROLES.EMPLOYEE,createdAt:new Date().toISOString(),avatar:d.name.split(" ").map(w=>w[0]).join("").toUpperCase()})}
+  async function deleteUser(id){return AppDB.del("users",id)}
+  function getUsers(){return AppDB.getAll("users")}
+  return{login,logout,getSession,isAuth,getRole,hasPerm,createUser,deleteUser,getUsers};
+})();
+
+/* ============================
+   APPUI — Helpers
+   ============================ */
+const AppUI = {
+  showToast(msg,type){
+    const c = document.querySelector('.toast-container') || (()=>{const x=document.createElement('div');x.className='toast-container';document.body.appendChild(x);return x})();
+    const t = document.createElement('div');
+    t.className = 'toast toast--'+type;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(()=>{t.remove();if(!c.children.length)c.remove()},AppConfig.TOAST_DURATION);
+  }
+};
+
+/* ============================
+   LOGIN SCREEN
+   ============================ */
+function showLogin(msg) {
+  document.getElementById('app').style.display = 'none';
+  const old = document.querySelector('.login-screen');
+  if(old) old.remove();
+
+  const div = document.createElement('div');
+  div.className = 'login-screen';
+  div.innerHTML = `<div class="login-card">
+    <div class="login-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="3" height="9" rx="1"/><rect x="10" y="7" width="3" height="14" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/></svg>
+      <span>SalesHub</span>
+    </div>
+    <h1>Welcome back</h1>
+    <p class="login-subtitle">Sign in to your account</p>
+    <div class="login-error ${msg?'visible':''}" id="login-error">${msg||''}</div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="login-email" placeholder="admin@saleshub.com" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="login-password" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <div class="form-error" id="login-field-error"></div>
+    <button class="btn-primary" id="login-btn">Sign In</button>
+  </div>`;
+  document.body.appendChild(div);
+
+  const emailEl = document.getElementById('login-email');
+  const passEl = document.getElementById('login-password');
+  const btn = document.getElementById('login-btn');
+  const fe = document.getElementById('login-field-error');
+  const le = document.getElementById('login-error');
+
+  function showErr(m){fe.textContent=m;fe.classList.add('visible')}
+  function clearErr(){fe.textContent='';fe.classList.remove('visible')}
+  function loading(v){btn.textContent=v?'Signing in...':'Sign In';btn.disabled=v}
+
+  async function handleLogin(){
+    clearErr();if(le){le.textContent='';le.classList.remove('visible')}
+    const e=emailEl.value.trim(),p=passEl.value;
+    if(!e){showErr('Email is required');return}
+    if(!p){showErr('Password is required');return}
+    loading(true);
+    try{await AppAuth.login(e,p);loading(false);initApp()}
+    catch(err){loading(false);showErr(err.message)}
+  }
+  btn.addEventListener('click',handleLogin);
+  passEl.addEventListener('keydown',ev=>{if(ev.key==='Enter')handleLogin()});
+  emailEl.addEventListener('keydown',ev=>{if(ev.key==='Enter')passEl.focus()});
+}
+
+function initApp() {
+  const loginScreen = document.querySelector('.login-screen');
+  if(loginScreen) loginScreen.remove();
+  document.getElementById('app').style.display = 'flex';
+  renderSidebar();
+  renderTopbar();
+  document.getElementById('content').innerHTML = `
+    <div style="text-align:center;padding:80px 20px">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <h2 style="margin:16px 0 8px;font-size:var(--font-xl)">Welcome to SalesHub</h2>
+      <p style="color:var(--color-text-secondary);font-size:var(--font-base)">Signed in as <strong>${AppAuth.getSession().name}</strong> (${AppAuth.getSession().role})</p>
+      <p style="color:var(--color-text-muted);font-size:var(--font-sm);margin-top:4px">Dashboard and CRM features coming in Phase 4</p>
+    </div>`;
+}
+
+/* ============================
+   SIDEBAR + TOPBAR (minimal)
+   ============================ */
+function renderSidebar() {
+  document.getElementById('sidebar').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;padding:20px 20px 16px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><rect x="3" y="12" width="3" height="9" rx="1"/><rect x="10" y="7" width="3" height="14" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/></svg>
+      <span style="font-size:var(--font-md);font-weight:700;color:var(--color-sidebar-active-text)">SalesHub</span>
+    </div>
+    <ul style="list-style:none;padding:0 8px">
+      <li style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--color-sidebar-active-text);background:var(--color-sidebar-active);font-size:var(--font-sm);font-weight:500;cursor:pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </li>
+      <li style="padding:12px 12px 6px;font-size:var(--font-xs);font-weight:600;color:var(--color-sidebar-text);text-transform:uppercase;opacity:0.6">CUSTOMERS</li>
+      <li style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--color-sidebar-text);font-size:var(--font-sm);cursor:pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>All Customers</span>
+      </li>
+      <li style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--color-sidebar-text);font-size:var(--font-sm);cursor:pointer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
+      </li>
+    </ul>
+    <div style="padding:16px;cursor:pointer;color:var(--color-sidebar-text);text-align:center;font-size:var(--font-xs)" onclick="AppAuth.logout()">Sign Out</div>
+  `;
+}
+
+function renderTopbar() {
+  const s = AppAuth.getSession();
+  document.getElementById('topbar').innerHTML = `
+    <h1 style="font-size:var(--font-xl);font-weight:700">Dashboard</h1>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;padding:8px 12px;width:280px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search customers..." style="background:none;border:none;outline:none;font-family:inherit;font-size:var(--font-sm);color:var(--color-text-primary);width:100%">
+      </div>
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--color-accent);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:var(--font-sm);font-weight:600">${s.avatar}</div>
+    </div>
+  `;
+}
+
+/* ============================
+   BOOTSTRAP
+   ============================ */
+AppDB.init().then(async () => {
+  await AppDB.seedAll();
+  if(!AppAuth.isAuth()) { showLogin(); return; }
+  initApp();
+}).catch(err => console.error("Init failed:", err));
+</script>
 </body>
 </html>
