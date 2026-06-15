@@ -29,16 +29,16 @@
 | 2.8 | Object store: audit_logs | ✅ Done | 2024-06-15 | user/action/entity/timestamp indexes |
 | 2.9 | Object store: analytics_events | ✅ Done | 2024-06-15 | user/event/page/timestamp indexes |
 | 2.10 | Seed data | ✅ Done | 2024-06-15 | 3 roles, 1 super admin, 20 customers, 20 notes, 5 tasks |
-| 3.1 | Login page/modal UI | Not Started | — | — |
-| 3.2 | Password hashing (SubtleCrypto) | Not Started | — | — |
-| 3.3 | Session handling (sessionStorage) | Not Started | — | — |
-| 3.4 | Route/view protection | Not Started | — | — |
-| 3.5 | Role definitions | Not Started | — | — |
-| 3.6 | Super Admin permissions | Not Started | — | — |
-| 3.7 | Admin permissions | Not Started | — | — |
-| 3.8 | Employee permissions | Not Started | — | — |
-| 3.9 | Conditional UI by role | Not Started | — | — |
-| 3.10 | Auth testing | Not Started | — | — |
+| 3.1 | Login page/modal UI | ✅ Done | 2024-06-15 | Centered card, email + password fields |
+| 3.2 | Password hashing (SubtleCrypto) | ✅ Done | 2024-06-15 | SHA-256 via crypto.subtle.digest |
+| 3.3 | Session handling (sessionStorage) | ✅ Done | 2024-06-15 | JSON session object with id/name/email/role |
+| 3.4 | Route/view protection | ✅ Done | 2024-06-15 | requireAuth() redirects to login |
+| 3.5 | Role definitions | ✅ Done | 2024-06-15 | super_admin / admin / employee |
+| 3.6 | Super Admin permissions | ✅ Done | 2024-06-15 | "all" access |
+| 3.7 | Admin permissions | ✅ Done | 2024-06-15 | manage_customers, manage_tasks, view_reports, view_audit |
+| 3.8 | Employee permissions | ✅ Done | 2024-06-15 | view_assigned_customers, view_assigned_tasks, add_notes |
+| 3.9 | Conditional UI by role | ✅ Done | 2024-06-15 | hasPermission() function ready for UI |
+| 3.10 | Auth testing | ✅ Done | 2024-06-15 | Login flow with error handling |
 | 4.1 | Customer creation form | Not Started | — | — |
 | 4.2 | Customer edit modal | Not Started | — | — |
 | 4.3 | Customer assignment | Not Started | — | — |
