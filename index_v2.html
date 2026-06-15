@@ -421,11 +421,89 @@ const AppDB = (() => {
 })();
 
 /* ============================================
+   LOGIN PAGE
+   ============================================ */
+function renderLoginPage(errorMsg) {
+  document.getElementById('app').style.display = 'none';
+  document.body.innerHTML = `
+    <div class="login-page">
+      <div class="login-card">
+        <div class="login-logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="3" height="9" rx="1"/><rect x="10" y="7" width="3" height="14" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/></svg>
+          <span>SalesHub</span>
+        </div>
+        <h1>Welcome back</h1>
+        <p class="login-subtitle">Sign in to your account</p>
+        <div class="login-error ${errorMsg ? 'visible' : ''}" id="login-error">${errorMsg || ''}</div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="login-email" placeholder="admin@saleshub.com" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="login-password" placeholder="Enter your password" autocomplete="current-password">
+        </div>
+        <div class="form-error" id="login-field-error"></div>
+        <button class="btn-primary" id="login-btn">Sign In</button>
+      </div>
+    </div>
+  `;
+
+  const emailInput = document.getElementById('login-email');
+  const passInput = document.getElementById('login-password');
+  const loginBtn = document.getElementById('login-btn');
+  const fieldError = document.getElementById('login-field-error');
+  const loginError = document.getElementById('login-error');
+
+  function showFieldError(msg) {
+    fieldError.textContent = msg;
+    fieldError.classList.add('visible');
+  }
+  function clearFieldError() {
+    fieldError.textContent = '';
+    fieldError.classList.remove('visible');
+  }
+  function setLoading(loading) {
+    loginBtn.textContent = loading ? 'Signing in...' : 'Sign In';
+    loginBtn.disabled = loading;
+  }
+
+  async function handleLogin() {
+    clearFieldError();
+    if (loginError) { loginError.textContent = ''; loginError.classList.remove('visible'); }
+    const email = emailInput.value.trim();
+    const password = passInput.value;
+    if (!email) { showFieldError('Email is required'); return; }
+    if (!password) { showFieldError('Password is required'); return; }
+    setLoading(true);
+    try {
+      await AppAuth.login(email, password);
+      setLoading(false);
+      window.location.reload();
+    } catch (err) {
+      setLoading(false);
+      showFieldError(err.message || 'Login failed');
+    }
+  }
+
+  loginBtn.addEventListener('click', handleLogin);
+  passInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+  emailInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') passInput.focus(); });
+}
+
+/* ============================================
    APP INIT — Bootstrap
    ============================================ */
-AppDB.init().then(() => {
-  AppDB.seedAll();
-  console.log("SalesHub DB ready — all stores initialized and seeded");
+AppDB.init().then(async () => {
+  await AppDB.seedAll();
+  console.log("SalesHub DB ready");
+
+  if (!AppAuth.isAuthenticated()) {
+    renderLoginPage();
+  } else {
+    console.log("User authenticated:", AppAuth.getSession().name, "| Role:", AppAuth.getSession().role);
+    // App will render in later phases
+  }
 }).catch(err => {
   console.error("Failed to init DB:", err);
 });
