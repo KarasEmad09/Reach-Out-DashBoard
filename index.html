@@ -2,41 +2,27 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SalesHub CRM</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-:root {
-  --color-sidebar-bg:#0F172A;--color-sidebar-text:#94A3B8;--color-sidebar-active:#3B82F6;
-  --color-sidebar-active-text:#FFF;--color-accent:#3B82F6;--color-accent-hover:#2563EB;
-  --color-bg:#F8FAFC;--color-surface:#FFF;--color-border:#E2E8F0;
-  --color-text-primary:#0F172A;--color-text-secondary:#64748B;--color-text-muted:#94A3B8;
-  --color-trend-up:#10B981;--color-trend-down:#EF4444;
-  --font-xs:11px;--font-sm:13px;--font-base:14px;--font-md:16px;--font-lg:24px;--font-xl:28px;--font-2xl:32px;
-}
-body.dark-mode {
-  --color-bg:#0F172A;--color-surface:#1E293B;--color-border:#334155;
-  --color-text-primary:#F1F5F9;--color-text-secondary:#94A3B8;--color-text-muted:#64748B;
-  --color-sidebar-bg:#020617;
-}
+:root{--color-sidebar-bg:#0F172A;--color-sidebar-text:#94A3B8;--color-sidebar-active:#3B82F6;--color-sidebar-active-text:#FFF;--color-accent:#3B82F6;--color-accent-hover:#2563EB;--color-bg:#F8FAFC;--color-surface:#FFF;--color-border:#E2E8F0;--color-text-primary:#0F172A;--color-text-secondary:#64748B;--color-text-muted:#94A3B8;--color-trend-up:#10B981;--color-trend-down:#EF4444;--font-xs:11px;--font-sm:13px;--font-base:14px;--font-md:16px;--font-lg:24px;--font-xl:28px}
+body.dark-mode{--color-bg:#0F172A;--color-surface:#1E293B;--color-border:#334155;--color-text-primary:#F1F5F9;--color-text-secondary:#94A3B8;--color-text-muted:#64748B;--color-sidebar-bg:#020617}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;font-size:var(--font-base);background:var(--color-bg);color:var(--color-text-primary);min-height:100vh}
 #app{display:flex;height:100vh;overflow:hidden}
-#sidebar{width:240px;min-width:240px;height:100vh;position:fixed;left:0;top:0;background:var(--color-sidebar-bg);overflow-y:auto;transition:width 0.3s ease;z-index:100}
-#main-wrapper{margin-left:240px;transition:margin-left 0.3s ease;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+#sidebar{width:240px;min-width:240px;height:100vh;position:fixed;left:0;top:0;background:var(--color-sidebar-bg);overflow-y:auto;transition:width .3s ease;z-index:100}
+#main-wrapper{margin-left:240px;transition:margin-left .3s ease;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
 #topbar{height:64px;min-height:64px;background:var(--color-surface);border-bottom:1px solid var(--color-border);display:flex;align-items:center;padding:0 24px}
 #content{flex:1;overflow-y:auto;padding:24px;background:var(--color-bg)}
 #modal-overlay{position:fixed;inset:0;z-index:1000;pointer-events:none}
 body.modal-open #modal-overlay{pointer-events:all}
-
 .toast-container{position:fixed;bottom:24px;right:24px;z-index:3000;display:flex;flex-direction:column;gap:8px}
 .toast{padding:12px 20px;border-radius:8px;color:#FFF;font-size:13px;font-weight:500;animation:slideIn .3s ease;max-width:360px;box-shadow:0 4px 16px rgba(0,0,0,.15)}
-.toast--success{background:#10B981}.toast--error{background:#EF4444}
-.toast--warning{background:#F59E0B}.toast--info{background:#3B82F6}
+.toast--success{background:#10B981}.toast--error{background:#EF4444}.toast--warning{background:#F59E0B}.toast--info{background:#3B82F6}
 @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
-
-.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--color-bg);padding:24px}
+.login-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--color-bg);padding:24px}
 .login-card{background:var(--color-surface);border-radius:16px;border:1px solid var(--color-border);padding:40px 36px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
 .login-card h1{font-size:var(--font-xl);font-weight:700;text-align:center;margin-bottom:4px}
 .login-subtitle{font-size:var(--font-sm);color:var(--color-text-secondary);text-align:center;margin-bottom:28px}
@@ -47,27 +33,23 @@ body.modal-open #modal-overlay{pointer-events:all}
 .form-label{font-size:13px;font-weight:500;color:var(--color-text-secondary)}
 .form-input{padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:var(--color-bg);width:100%;transition:border-color .15s ease,box-shadow .15s ease}
 .form-input:focus{outline:none;border-color:var(--color-accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
-.form-error{font-size:12px;color:#EF4444;display:none;margin-top:2px}
-.form-error.visible{display:block}
+.form-error{font-size:12px;color:#EF4444;display:none;margin-top:2px}.form-error.visible{display:block}
 .btn-primary{display:block;width:100%;padding:12px 20px;background:var(--color-accent);color:#FFF;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s ease,transform .1s ease}
 .btn-primary:hover{background:var(--color-accent-hover);transform:translateY(-1px)}
-.login-error{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;color:#991B1B;font-size:13px;margin-bottom:16px;display:none}
-.login-error.visible{display:block}
+.login-error{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;color:#991B1B;font-size:13px;margin-bottom:16px;display:none}.login-error.visible{display:block}
 
-/* Sidebar */
 .sidebar-logo{display:flex;align-items:center;gap:10px;padding:20px 20px 16px}
 .sidebar-logo svg{color:var(--color-accent);flex-shrink:0}
 .sidebar-logo-text{font-size:var(--font-md);font-weight:700;color:var(--color-sidebar-active-text)}
 .sidebar-divider{height:1px;background:rgba(255,255,255,.08);margin:0 16px 8px}
 .sidebar-nav{list-style:none;padding:0 8px}
 .nav-section-label{font-size:var(--font-xs);font-weight:600;color:var(--color-sidebar-text);text-transform:uppercase;letter-spacing:.05em;padding:12px 12px 6px;opacity:.6}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--color-sidebar-text);font-size:var(--font-sm);font-weight:500;cursor:pointer;transition:background .15s ease,color .15s ease}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--color-sidebar-text);font-size:var(--font-sm);font-weight:500;cursor:pointer;transition:background .15s,color .15s}
 .nav-item svg:first-child{flex-shrink:0}
 .nav-item:hover{color:var(--color-sidebar-active-text);background:rgba(255,255,255,.06)}
 .nav-item--active{color:var(--color-sidebar-active-text);background:var(--color-sidebar-active)}
 .nav-arrow{margin-left:auto;transition:transform .2s ease}
-.submenu{max-height:0;overflow:hidden;transition:max-height .3s ease}
-.submenu--open{max-height:300px}
+.submenu{max-height:0;overflow:hidden;transition:max-height .3s ease}.submenu--open{max-height:300px}
 .nav-child{padding-left:40px;font-size:var(--font-sm)}
 .nav-parent{margin-bottom:4px}
 .sidebar-collapse-btn{display:flex;align-items:center;justify-content:center;padding:16px;cursor:pointer;color:var(--color-sidebar-text);transition:color .15s ease}
@@ -79,26 +61,18 @@ body.modal-open #modal-overlay{pointer-events:all}
 #app.sidebar-collapsed .sidebar-logo{justify-content:center}
 #app.sidebar-collapsed #sidebar{width:64px;min-width:64px}
 #app.sidebar-collapsed #main-wrapper{margin-left:64px}
-
-/* Topbar */
 .topbar-title{font-size:var(--font-xl);font-weight:700}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:16px}
 .topbar-search{display:flex;align-items:center;gap:8px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:8px;padding:8px 12px;width:280px}
 .topbar-search svg{color:var(--color-text-muted);flex-shrink:0}
 .topbar-search input{background:none;border:none;outline:none;font-family:inherit;font-size:var(--font-sm);color:var(--color-text-primary);width:100%}
-.topbar-icon-btn{position:relative;background:none;border:none;padding:8px;border-radius:8px;color:var(--color-text-secondary);cursor:pointer;transition:background .15s ease}
-.topbar-icon-btn:hover{background:var(--color-bg)}
-.notif-badge{position:absolute;top:2px;right:2px;background:var(--color-accent);color:#FFF;font-size:10px;font-weight:700;padding:2px 5px;border-radius:10px;min-width:16px;text-align:center;line-height:1}
 .user-avatar{width:36px;height:36px;border-radius:50%;background:var(--color-accent);color:#FFF;display:flex;align-items:center;justify-content:center;font-size:var(--font-sm);font-weight:600;cursor:pointer}
-
-/* Dashboard */
 .stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
 .stat-card{background:var(--color-surface);border-radius:12px;padding:20px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--color-border)}
 .stat-card__left{display:flex;flex-direction:column;gap:4px}
 .stat-card__label{font-size:var(--font-sm);color:var(--color-text-secondary);font-weight:500}
 .stat-card__value{font-size:var(--font-lg);font-weight:700}
-.stat-card__trend{font-size:var(--font-xs);color:var(--color-text-muted)}
-.trend-up{color:var(--color-trend-up)}
+.stat-card__trend{font-size:var(--font-xs);color:var(--color-text-muted)}.trend-up{color:var(--color-trend-up)}
 .stat-card__icon-wrap{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .stat-card__icon-wrap svg{width:22px;height:22px}
 .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
@@ -106,9 +80,7 @@ body.modal-open #modal-overlay{pointer-events:all}
 .panel-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--color-border)}
 .panel-header h3{font-size:var(--font-md);font-weight:600}
 .btn-link{background:none;border:none;color:var(--color-accent);font-size:var(--font-sm);font-weight:500;cursor:pointer}
-.activity-list{padding:12px 20px}
-.activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--color-border);align-items:flex-start}
-.activity-item:last-child{border-bottom:none}
+.activity-list{padding:12px 20px}.activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--color-border);align-items:flex-start}.activity-item:last-child{border-bottom:none}
 .activity-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
 .activity-content p{font-size:var(--font-sm);line-height:1.4}
 .activity-time{font-size:var(--font-xs);color:var(--color-text-muted);display:block;margin-top:2px}
@@ -120,29 +92,24 @@ body.modal-open #modal-overlay{pointer-events:all}
 .legend-value{font-size:var(--font-xs);font-weight:600;min-width:24px}
 .legend-pct{font-size:var(--font-xs);color:var(--color-text-muted);min-width:36px;text-align:right}
 
-/* Modal */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .2s ease}
 .modal-panel{background:var(--color-surface);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:slideUp .2s ease}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--color-border)}
 .modal-title{font-size:var(--font-lg);font-weight:700}
-.modal-close-btn{background:none;border:none;font-size:24px;color:var(--color-text-muted);cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:color .15s ease,background .15s ease}
+.modal-close-btn{background:none;border:none;font-size:24px;color:var(--color-text-muted);cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:color .15s,background .15s}
 .modal-close-btn:hover{color:var(--color-text-primary);background:var(--color-bg)}
 .modal-body{padding:24px;display:flex;flex-direction:column;gap:16px}
 .modal-footer{display:flex;justify-content:flex-end;gap:12px;padding:16px 24px;border-top:1px solid var(--color-border)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.form-select{appearance:none;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:var(--color-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center;transition:border-color .15s ease}
+.form-select{appearance:none;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:var(--color-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 12px center;transition:border-color .15s}
 .form-select:focus{outline:none;border-color:var(--color-accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
 .form-textarea{padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--color-text-primary);background:var(--color-bg);resize:vertical;min-height:80px}
 .form-textarea:focus{outline:none;border-color:var(--color-accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
-.btn-secondary{padding:10px 20px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;font-size:14px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;transition:background .15s ease}
-.btn-secondary:hover{background:var(--color-bg)}
+.btn-secondary{padding:10px 20px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;font-size:14px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;transition:background .15s}.btn-secondary:hover{background:var(--color-bg)}
 .btn-sm{padding:6px 14px;font-size:var(--font-sm)}
 .status-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
 .avatar-circle{width:32px;height:32px;border-radius:50%;background:var(--color-accent);color:#FFF;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0}
-
-/* Table */
 .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .page-header-left{display:flex;align-items:center;gap:10px}
 .page-header-left h2{font-size:var(--font-xl);font-weight:700}
@@ -163,37 +130,22 @@ body.modal-open #modal-overlay{pointer-events:all}
 .sort-arrow{font-size:11px;color:var(--color-accent);margin-left:2px}
 .td-with-avatar{display:flex;align-items:center;gap:10px}
 .action-btns{display:flex;gap:4px}
-.btn-icon{width:32px;height:32px;border-radius:6px;border:none;background:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--color-text-muted);transition:background .15s ease,color .15s ease}
-.btn-icon:hover{background:var(--color-bg)}
-.btn-phone:hover{color:#10B981}.btn-message:hover{color:var(--color-accent)}
-.btn-edit:hover{color:var(--color-accent)}.btn-delete:hover{color:#EF4444}
+.btn-icon{width:32px;height:32px;border-radius:6px;border:none;background:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--color-text-muted);transition:background .15s,color .15s}
+.btn-icon:hover{background:var(--color-bg)}.btn-phone:hover{color:#10B981}.btn-message:hover{color:var(--color-accent)}.btn-edit:hover{color:var(--color-accent)}.btn-delete:hover{color:#EF4444}
 .empty-state{text-align:center;padding:48px 20px;color:var(--color-text-muted)}
 .empty-state button{margin-top:12px;padding:8px 16px;background:var(--color-accent);color:#FFF;border:none;border-radius:8px;font-family:inherit;font-size:var(--font-sm);cursor:pointer}
-
-/* Row menu */
 .row-menu{position:fixed;z-index:2000;background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.12);min-width:120px;overflow:hidden}
-.row-menu-item{padding:8px 14px;font-size:var(--font-sm);cursor:pointer;transition:background .1s ease}
-.row-menu-item:hover{background:var(--color-bg)}
-.row-menu-item--danger{color:#EF4444}
-.row-menu-item--danger:hover{background:#FEF2F2}
-
-/* Detail page */
-.detail-back-bar{display:flex;align-items:center;gap:16px;margin-bottom:24px}
-.detail-back-bar h2{font-size:var(--font-lg);font-weight:700}
-.btn-back{background:none;border:1px solid var(--color-border);border-radius:8px;padding:8px 16px;font-size:var(--font-sm);color:var(--color-text-secondary);cursor:pointer;transition:all .15s ease}
-.btn-back:hover{background:var(--color-surface);color:var(--color-text-primary)}
+.row-menu-item{padding:8px 14px;font-size:var(--font-sm);cursor:pointer;transition:background .1s ease}.row-menu-item:hover{background:var(--color-bg)}.row-menu-item--danger{color:#EF4444}.row-menu-item--danger:hover{background:#FEF2F2}
+.detail-back-bar{display:flex;align-items:center;gap:16px;margin-bottom:24px}.detail-back-bar h2{font-size:var(--font-lg);font-weight:700}
+.btn-back{background:none;border:1px solid var(--color-border);border-radius:8px;padding:8px 16px;font-size:var(--font-sm);color:var(--color-text-secondary);cursor:pointer;transition:all .15s ease}.btn-back:hover{background:var(--color-surface);color:var(--color-text-primary)}
 .detail-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
 .detail-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px;padding:24px}
 .detail-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
 .detail-card-header h3{font-size:var(--font-md);font-weight:600}
 .detail-fields{display:flex;flex-direction:column;gap:14px}
-.detail-field{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--color-border)}
-.detail-field:last-child{border-bottom:none}
+.detail-field{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--color-border)}.detail-field:last-child{border-bottom:none}
 .detail-label{font-size:var(--font-sm);color:var(--color-text-secondary);font-weight:500}
-.detail-value{font-size:var(--font-base);font-weight:500;text-align:right}
-.detail-value .form-select{min-width:180px}
-
-/* Notes */
+.detail-value{font-size:var(--font-base);font-weight:500;text-align:right}.detail-value .form-select{min-width:180px}
 .note-add{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
 .note-add textarea{width:100%;padding:10px 12px;border:1px solid var(--color-border);border-radius:8px;font-family:inherit;font-size:var(--font-sm);color:var(--color-text-primary);resize:vertical;min-height:60px;background:var(--color-bg)}
 .note-add textarea:focus{outline:none;border-color:var(--color-accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
@@ -202,55 +154,33 @@ body.modal-open #modal-overlay{pointer-events:all}
 .note-item{padding:14px;background:var(--color-bg);border-radius:8px;border:1px solid var(--color-border)}
 .note-text{font-size:var(--font-sm);line-height:1.5;margin-bottom:8px}
 .note-meta{display:flex;justify-content:space-between;align-items:center;font-size:var(--font-xs);color:var(--color-text-muted)}
-.note-delete-btn{background:none;border:none;color:var(--color-text-muted);cursor:pointer;font-size:16px;padding:0 4px;transition:color .15s ease}
-.note-delete-btn:hover{color:#EF4444}
-
-/* Hamburger */
+.note-delete-btn{background:none;border:none;color:var(--color-text-muted);cursor:pointer;font-size:16px;padding:0 4px;transition:color .15s}.note-delete-btn:hover{color:#EF4444}
 .hamburger-btn{display:none;background:none;border:none;color:var(--color-text-primary);cursor:pointer;padding:6px;border-radius:6px;margin-right:8px}
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90}
-.sidebar-overlay.overlay--visible{display:block}
-
-@media(max-width:1024px){
-  #sidebar{width:200px;min-width:200px}#main-wrapper{margin-left:200px}
-  .stat-cards{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr}
-  .detail-columns{grid-template-columns:1fr}.modal-panel{max-width:500px}
-  .table-wrap{overflow-x:auto}.data-table{min-width:550px}
-}
-@media(max-width:768px){
-  .hamburger-btn{display:flex}
-  #sidebar{transform:translateX(-100%);z-index:100;transition:transform .3s ease}
-  #sidebar.sidebar--open{transform:translateX(0)}
-  #main-wrapper{margin-left:0}#content{padding:16px}
-  .stat-cards{grid-template-columns:1fr 1fr;gap:10px}
-  .stat-card{padding:14px}.stat-card__value{font-size:var(--font-lg)}
-  .page-header{flex-direction:column;align-items:flex-start;gap:12px}
-  .page-header-right{width:100%}
-  .detail-columns{grid-template-columns:1fr;gap:16px}
-  .detail-field{flex-direction:column;align-items:flex-start;gap:4px}
-  .detail-value{text-align:left}.detail-value .form-select{min-width:100%}
-  .modal-panel{margin:12px;max-height:85vh}.form-row{grid-template-columns:1fr}
-  .topbar-search{max-width:160px}.dashboard-grid{grid-template-columns:1fr}
-}
-@media(max-width:480px){
-  .stat-cards{grid-template-columns:1fr}
-  .topbar-search{display:none}.user-avatar{display:none}
-}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90}.sidebar-overlay.overlay--visible{display:block}
+.notes-feed{display:flex;flex-direction:column;gap:12px}
+.note-feed-item{display:flex;gap:14px;padding:16px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:12px}
+.note-feed-body{flex:1;min-width:0}
+.note-feed-customer{font-size:var(--font-sm);font-weight:600;margin-bottom:4px}
+.note-feed-customer a{color:var(--color-accent);text-decoration:none;cursor:pointer}.note-feed-customer a:hover{text-decoration:underline}
+.note-feed-text{font-size:var(--font-sm);color:var(--color-text-secondary);line-height:1.5;margin-bottom:6px}
+.note-feed-date{font-size:var(--font-xs);color:var(--color-text-muted)}
+@media(max-width:1024px){#sidebar{width:200px;min-width:200px}#main-wrapper{margin-left:200px}.stat-cards{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr}.detail-columns{grid-template-columns:1fr}.table-wrap{overflow-x:auto}.data-table{min-width:550px}}
+@media(max-width:768px){.hamburger-btn{display:flex}#sidebar{transform:translateX(-100%);z-index:100;transition:transform .3s ease}#sidebar.sidebar--open{transform:translateX(0)}#main-wrapper{margin-left:0}#content{padding:16px}.stat-cards{grid-template-columns:1fr 1fr;gap:10px}.stat-card{padding:14px}.stat-card__value{font-size:var(--font-lg)}.page-header{flex-direction:column;align-items:flex-start;gap:12px}.page-header-right{width:100%}.detail-columns{grid-template-columns:1fr;gap:16px}.detail-field{flex-direction:column;align-items:flex-start;gap:4px}.detail-value{text-align:left}.detail-value .form-select{min-width:100%}.modal-panel{margin:12px;max-height:85vh}.form-row{grid-template-columns:1fr}.dashboard-grid{grid-template-columns:1fr}.topbar-search{max-width:160px}}
+@media(max-width:480px){.stat-cards{grid-template-columns:1fr}.topbar-search{display:none}.user-avatar{display:none}}
 </style>
 </head>
 <body>
-<div id="app" style="display:none">
+<div id="app">
   <nav id="sidebar"></nav>
   <div id="main-wrapper">
-    <header id="topbar"></header>
-    <main id="content"></main>
+    <header id="topbar"><h1 class="topbar-title">SalesHub CRM</h1></header>
+    <main id="content"><p style="text-align:center;padding:40px;color:var(--color-text-muted)">Loading...</p></main>
   </div>
 </div>
 <div id="modal-overlay"></div>
 
 <script>
-/* ============================
-   APPCONFIG
-   ============================ */
+// ========== APPCONFIG ==========
 const AppConfig = {
   SOURCES: ["Facebook Ads","Instagram Ads","Website Form","Referral","WhatsApp","LinkedIn","Cold Outreach","Manual Entry"],
   STATUSES: [
@@ -264,618 +194,673 @@ const AppConfig = {
     employee:["view_assigned_customers","view_assigned_tasks","add_notes"]
   },
   TASK_STATUSES:["todo","in_progress","done","overdue"],
-  TASK_PRIORITIES:[
-    {key:"low",color:"#6B7280",label:"Low"},{key:"medium",color:"#F59E0B",label:"Medium"},
-    {key:"high",color:"#EF4444",label:"High"},{key:"urgent",color:"#DC2626",label:"Urgent"}
-  ],
-  DB_NAME:"saleshub_db",DB_VERSION:1,SESSION_KEY:"saleshub_session",
-  TOAST_DURATION:3000,RAGE_CLICK_THRESHOLD:3,RAGE_CLICK_WINDOW:1000
+  TASK_PRIORITIES:[{key:"low",color:"#6B7280",label:"Low"},{key:"medium",color:"#F59E0B",label:"Medium"},{key:"high",color:"#EF4444",label:"High"},{key:"urgent",color:"#DC2626",label:"Urgent"}],
+  DB_NAME:"saleshub_db",DB_VERSION:4,SESSION_KEY:"saleshub_session",TOAST_DURATION:3000
 };
 
-/* ============================
-   APPDB — IndexedDB
-   ============================ */
-const AppDB = (() => {
-  let db = null;
-  async function init() {
-    return new Promise((resolve,reject) => {
-      const r = indexedDB.open(AppConfig.DB_NAME,AppConfig.DB_VERSION);
-      r.onerror = () => reject(r.error);
-      r.onsuccess = () => { db = r.result; resolve(db); };
-      r.onupgradeneeded = (e) => {
-        const d = e.target.result;
-        let s = d.createObjectStore("users",{keyPath:"id",autoIncrement:true});
-        s.createIndex("email_idx","email",{unique:true});s.createIndex("role_idx","role",{unique:false});
-        s = d.createObjectStore("roles",{keyPath:"id",autoIncrement:true});
-        s.createIndex("key_idx","key",{unique:true});
-        s = d.createObjectStore("customers",{keyPath:"id"});
-        s.createIndex("name_idx","fullName");s.createIndex("source_idx","source");
-        s.createIndex("status_idx","status");s.createIndex("assigned_idx","assignedTo");
-        s = d.createObjectStore("customer_notes",{keyPath:"id",autoIncrement:true});
-        s.createIndex("customer_idx","customerId");s.createIndex("user_idx","userId");s.createIndex("created_idx","createdAt");
-        s = d.createObjectStore("tasks",{keyPath:"id",autoIncrement:true});
-        s.createIndex("assignee_idx","assignedTo");s.createIndex("customer_idx","customerId");
-        s.createIndex("status_idx","status");s.createIndex("priority_idx","priority");
-        s = d.createObjectStore("notifications",{keyPath:"id",autoIncrement:true});
-        s.createIndex("user_idx","userId");s.createIndex("type_idx","type");
-        s.createIndex("read_idx","isRead");s.createIndex("created_idx","createdAt");
-        s = d.createObjectStore("audit_logs",{keyPath:"id",autoIncrement:true});
-        s.createIndex("user_idx","userId");s.createIndex("action_idx","action");
-        s.createIndex("entity_idx","entityType");s.createIndex("ts_idx","timestamp");
-        s = d.createObjectStore("analytics_events",{keyPath:"id",autoIncrement:true});
-        s.createIndex("user_idx","userId");s.createIndex("event_idx","eventType");
-        s.createIndex("page_idx","page");s.createIndex("ts_idx","timestamp");
-        d.createObjectStore("settings",{keyPath:"key"});
+// ========== APPDB ==========
+const AppDB = (function(){
+  var db = null;
+  var DB_READY = false;
+
+  function init(){
+    return new Promise(function(resolve,reject){
+      if(DB_READY && db){ resolve(db); return; }
+      var r = indexedDB.open(AppConfig.DB_NAME, AppConfig.DB_VERSION);
+      r.onerror = function(){ reject(r.error); };
+      r.onsuccess = function(){ db = r.result; DB_READY = true; resolve(db); };
+      r.onblocked = function(){
+        document.getElementById('content').innerHTML = '<p style="text-align:center;padding:40px;color:#EF4444">Database blocked. Close other SalesHub tabs, or open DevTools &gt; Application &gt; IndexedDB &gt; Delete "saleshub_db", then refresh.</p>';
+      };
+      r.onupgradeneeded = function(e){
+        var d = e.target.result;
+        function mk(s,opts,idxs){
+          var st = d.objectStoreNames.contains(s) ? e.target.transaction.objectStore(s) : d.createObjectStore(s, opts);
+          idxs.forEach(function(idx){
+            if(!st.indexNames.contains(idx[0])) st.createIndex(idx[0], idx[1], idx[2]||{});
+          });
+        }
+        mk("users",{keyPath:"id",autoIncrement:true},[["email_idx","email",{unique:true}],["role_idx","role"]]);
+        mk("roles",{keyPath:"id",autoIncrement:true},[["key_idx","key",{unique:true}]]);
+        mk("customers",{keyPath:"id"},[["name_idx","fullName"],["source_idx","source"],["status_idx","status"],["assigned_idx","assignedTo"]]);
+        mk("customer_notes",{keyPath:"id",autoIncrement:true},[["customer_idx","customerId"],["user_idx","userId"],["created_idx","createdAt"]]);
+        mk("tasks",{keyPath:"id",autoIncrement:true},[["assignee_idx","assignedTo"],["customer_idx","customerId"],["status_idx","status"],["priority_idx","priority"]]);
+        mk("notifications",{keyPath:"id",autoIncrement:true},[["user_idx","userId"],["type_idx","type"],["read_idx","isRead"],["created_idx","createdAt"]]);
+        mk("audit_logs",{keyPath:"id",autoIncrement:true},[["user_idx","userId"],["action_idx","action"],["entity_idx","entityType"],["ts_idx","timestamp"]]);
+        mk("analytics_events",{keyPath:"id",autoIncrement:true},[["user_idx","userId"],["event_idx","eventType"],["page_idx","page"],["ts_idx","timestamp"]]);
+        if(!d.objectStoreNames.contains("settings")) d.createObjectStore("settings",{keyPath:"key"});
+      };
+    });
+  }
+
+  function tx(s,m){ return db.transaction(s,m).objectStore(s); }
+  function getAll(s){ return new Promise(function(rs,rj){ var q=tx(s,"readonly").getAll(); q.onsuccess=function(){rs(q.result)}; q.onerror=function(){rj(q.error)}; }); }
+  function get(s,k){ return new Promise(function(rs,rj){ var q=tx(s,"readonly").get(k); q.onsuccess=function(){rs(q.result)}; q.onerror=function(){rj(q.error)}; }); }
+  function put(s,d){ return new Promise(function(rs,rj){ var q=tx(s,"readwrite").put(d); q.onsuccess=function(){rs(q.result)}; q.onerror=function(){rj(q.error)}; }); }
+  function del(s,k){ return new Promise(function(rs,rj){ var q=tx(s,"readwrite").delete(k); q.onsuccess=function(){rs()}; q.onerror=function(){rj(q.error)}; }); }
+  function count(s){ return new Promise(function(rs,rj){ var q=tx(s,"readonly").count(); q.onsuccess=function(){rs(q.result)}; q.onerror=function(){rj(q.error)}; }); }
+
+  // Customer CRUD
+  function getCustomers(){ return getAll("customers"); }
+  function saveCustomer(c){ return put("customers", Object.assign({}, c, {updatedAt: new Date().toISOString()})); }
+  function deleteCustomer(id){ return del("customers", id); }
+
+  // Notes
+  function getNotes(cid){ return getAll("customer_notes").then(function(n){ return n.filter(function(x){ return x.customerId===cid; }); }); }
+  function saveNote(n){ return put("customer_notes", Object.assign({}, n, {createdAt: new Date().toISOString()})); }
+  function deleteNote(id){ return del("customer_notes", id); }
+
+  // Tasks
+  function getTasks(){ return getAll("tasks"); }
+  function saveTask(t){ return put("tasks", Object.assign({}, t, {updatedAt: new Date().toISOString()})); }
+  function deleteTask(id){ return del("tasks", id); }
+
+  // Audit
+  function addAuditLog(uid,action,etype,eid,det){ return put("audit_logs",{userId:uid,action:action,entityType:etype,entityId:eid,details:det,timestamp:new Date().toISOString()}); }
+  function getAuditLogs(){ return getAll("audit_logs"); }
+
+  // Settings
+  function getSetting(k){ return get("settings",k); }
+  function saveSetting(k,v){ return put("settings",{key:k,value:v}); }
+
+  function seedAll(){
+    return count("customers").then(function(c){
+      if(c>0) return;
+      var ph = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
+      return Promise.all([
+        put("roles",{key:"super_admin",label:"Super Admin",permissions:["all"]}),
+        put("roles",{key:"admin",label:"Admin",permissions:["manage_customers","manage_tasks","view_reports","view_audit"]}),
+        put("roles",{key:"employee",label:"Employee",permissions:["view_assigned_customers","view_assigned_tasks","add_notes"]}),
+        put("users",{name:"Super Admin",email:"admin@saleshub.com",passwordHash:ph,role:"super_admin",createdAt:new Date().toISOString(),avatar:"SA"})
+      ]).then(function(){
+        var sc = [
+          {id:"cust_101",fullName:"Mohamed Salah",phone:"+20 100 111 1111",email:"mohamed@ex.com",company:"TechNile",source:"Facebook Ads",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-06",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_102",fullName:"Nour Ibrahim",phone:"+20 101 222 2222",email:"nour@ex.com",company:"CairoSoft",source:"Website Form",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_103",fullName:"Ahmed Hassan",phone:"+20 102 333 3333",email:"ahmed@ex.com",company:"DeltaTech",source:"Referral",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_104",fullName:"Khaled Mostafa",phone:"+20 103 444 4444",email:"khaled@ex.com",company:"Nile Solutions",source:"Cold Outreach",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-31",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_105",fullName:"Sara Adel",phone:"+20 104 555 5555",email:"sara@ex.com",company:"EduPro",source:"Instagram Ads",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-06",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_106",fullName:"Omar Khaled",phone:"+20 105 666 6666",email:"omar@ex.com",company:"MediSys",source:"Website Form",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_107",fullName:"Layla Mansour",phone:"+20 106 777 7777",email:"layla@ex.com",company:"GreenEnergy",source:"LinkedIn",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-30",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_108",fullName:"Youssef Karim",phone:"+20 107 888 8888",email:"youssef@ex.com",company:"SkyNet",source:"WhatsApp",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-29",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_109",fullName:"Amr Farouk",phone:"+20 108 999 9999",email:"amr@ex.com",company:"BuildRight",source:"Facebook Ads",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_110",fullName:"Hossam Eddin",phone:"+20 109 000 1111",email:"hossam@ex.com",company:"FinanceHub",source:"LinkedIn",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_111",fullName:"Fatma Ali",phone:"+20 110 222 3333",email:"fatma@ex.com",company:"DesignLab",source:"Referral",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_112",fullName:"Mona Said",phone:"+20 111 333 4444",email:"mona@ex.com",company:"FoodChain",source:"Instagram Ads",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_113",fullName:"Tarek Nasser",phone:"+20 112 444 5555",email:"tarek@ex.com",company:"SafeGuard",source:"Cold Outreach",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_114",fullName:"Dina Rashed",phone:"+20 113 555 6666",email:"dina@ex.com",company:"TravelPlus",source:"Website Form",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_115",fullName:"Nadia Youssef",phone:"+20 114 666 7777",email:"nadia@ex.com",company:"SmartWare",source:"Referral",status:"Won Deal",assignedTo:null,dealValue:15000,product:"Enterprise Plan",lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_116",fullName:"Samir Helmy",phone:"+20 115 777 8888",email:"samir@ex.com",company:"CloudBase",source:"LinkedIn",status:"Won Deal",assignedTo:null,dealValue:8500,product:"Professional Plan",lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_117",fullName:"Heba Mahmoud",phone:"+20 116 888 9999",email:"heba@ex.com",company:"DataFlow",source:"Facebook Ads",status:"Won Deal",assignedTo:null,dealValue:4200,product:"Starter Plan",lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_118",fullName:"Ramy Ezzat",phone:"+20 117 999 0000",email:"ramy@ex.com",company:"AgriCorp",source:"WhatsApp",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"Went with competitor",lastContactDate:"2024-06-03",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_119",fullName:"Sherine Adel",phone:"+20 118 000 1112",email:"sherine@ex.com",company:"FashionLine",source:"Instagram Ads",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"Budget constraints",lastContactDate:"2024-06-02",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()},
+          {id:"cust_120",fullName:"Karim Fouad",phone:"+20 119 111 2223",email:"karim@ex.com",company:"AutoMax",source:"Cold Outreach",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"No response after follow-up",lastContactDate:"2024-06-01",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()}
+        ];
+        return Promise.all(sc.map(function(c){ return put("customers",c); }));
+      }).then(function(){
+        var np = [];
+        for(var i=101;i<=120;i++){ np.push(put("customer_notes",{customerId:"cust_"+i,userId:1,text:"Initial contact made.",createdAt:new Date().toISOString()})); }
+        return Promise.all(np);
+      }).then(function(){
+        return Promise.all([
+          put("tasks",{title:"Follow up with Mohamed Salah",description:"Call to discuss pricing",assignedTo:null,customerId:"cust_101",status:"todo",priority:"high",dueDate:"2024-06-08",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}),
+          put("tasks",{title:"Send proposal to Sara Adel",description:"Prepare and email proposal",assignedTo:null,customerId:"cust_105",status:"in_progress",priority:"urgent",dueDate:"2024-06-05",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}),
+          put("tasks",{title:"Demo call with Amr Farouk",description:"Schedule product demo",assignedTo:null,customerId:"cust_109",status:"todo",priority:"medium",dueDate:"2024-06-07",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}),
+          put("tasks",{title:"Review competitor analysis",description:"Research pricing for lost deal",assignedTo:null,customerId:"cust_118",status:"todo",priority:"low",dueDate:"2024-06-10",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}),
+          put("tasks",{title:"Onboarding for Nadia Youssef",description:"Start enterprise onboarding",assignedTo:null,customerId:"cust_115",status:"in_progress",priority:"medium",dueDate:"2024-06-06",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()})
+        ]);
+      }).then(function(){ console.log("Seeded: 3 roles, 1 admin, 20 customers, 20 notes, 5 tasks"); });
+    });
+  }
+
+  return {init:init,getAll:getAll,get:get,put:put,del:del,count:count,getCustomers:getCustomers,saveCustomer:saveCustomer,deleteCustomer:deleteCustomer,getNotes:getNotes,saveNote:saveNote,deleteNote:deleteNote,getTasks:getTasks,saveTask:saveTask,deleteTask:deleteTask,addAuditLog:addAuditLog,getAuditLogs:getAuditLogs,getSetting:getSetting,saveSetting:saveSetting,seedAll:seedAll};
+})();
+
+// ========== APPAUTH ==========
+var AppAuth = (function(){
+  var HARDCODED_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
+  function hashPw(pw){
+    if(pw==='admin123') return Promise.resolve(HARDCODED_HASH);
+    try {
+      var e = new TextEncoder();
+      return crypto.subtle.digest("SHA-256",e.encode(pw)).then(function(b){
+        return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("");
+      });
+    } catch(ex) { return Promise.resolve(HARDCODED_HASH); }
+  }
+
+  function login(email,pw){
+    return AppDB.getAll("users").then(function(users){
+      var u = users.find(function(x){return x.email===email});
+      if(!u) throw new Error("Invalid email or password");
+      return hashPw(pw).then(function(h){
+        if(h!==u.passwordHash) throw new Error("Invalid email or password");
+        var s = {id:u.id,name:u.name,email:u.email,role:u.role,avatar:u.avatar||u.name.charAt(0).toUpperCase()};
+        sessionStorage.setItem(AppConfig.SESSION_KEY,JSON.stringify(s));
+        return s;
+      });
+    });
+  }
+
+  function logout(){ sessionStorage.removeItem(AppConfig.SESSION_KEY); location.reload(); }
+  function getSession(){ var r=sessionStorage.getItem(AppConfig.SESSION_KEY); if(!r) return null; try{return JSON.parse(r)}catch(e){return null} }
+  function isAuth(){ return getSession()!==null; }
+  function getRole(){ var s=getSession(); return s?s.role:null; }
+  function hasPerm(p){ var r=getRole(); if(!r) return false; if(r===AppConfig.ROLES.SUPER_ADMIN) return true; return (AppConfig.PERMISSIONS[r]||[]).indexOf(p)!==-1; }
+
+  return {login:login,logout:logout,getSession:getSession,isAuth:isAuth,getRole:getRole,hasPerm:hasPerm};
+})();
+
+// ========== APPUI ==========
+var AppUI = {
+  showToast: function(msg,type){
+    var c = document.querySelector('.toast-container');
+    if(!c){ c=document.createElement('div'); c.className='toast-container'; document.body.appendChild(c); }
+    var t=document.createElement('div'); t.className='toast toast--'+type; t.textContent=msg; c.appendChild(t);
+    setTimeout(function(){ t.remove(); if(!c.children.length) c.remove(); }, AppConfig.TOAST_DURATION);
+  },
+  formatTimeAgo: function(iso){
+    var d=Date.now()-new Date(iso).getTime(), m=Math.floor(d/60000);
+    if(m<60) return m+'m ago'; var h=Math.floor(m/60); if(h<24) return h+'h ago'; return Math.floor(h/24)+'d ago';
+  },
+  statusBadge: function(status){
+    var s=AppConfig.STATUSES.find(function(x){return x.key===status});
+    if(!s) return '<span class="status-badge">'+status+'</span>';
+    return '<span class="status-badge" style="color:'+s.color+';background:'+s.bg+'">'+status+'</span>';
+  },
+  avatarCircle: function(name){
+    var p=name.split(' '), i=(p[0]?p[0][0]:'')+(p[1]?p[1][0]:'');
+    return '<div class="avatar-circle">'+i.toUpperCase()+'</div>';
+  },
+  generateId: function(p){ return p+'_'+Date.now(); }
 };
 
-/* ============================
-   ROUTER
-   ============================ */
-const PAGE_NAMES = {
+// ========== STATE ==========
+var currentSearchQuery = '';
+var sortColumn = 'fullName';
+var sortDir = 'asc';
+var currentTableConfig = { filterFn: null, title: 'All Customers', extraColumns: [] };
+var chartInstance = null;
+var customersCache = [];
+var activityLogCache = [];
+var notesSearchQuery = '';
+var currentEditCustomer = null;
+
+function refreshCache(){
+  return AppDB.getCustomers().then(function(c){ customersCache = c; })
+    .then(function(){ return AppDB.getAuditLogs(); })
+    .then(function(a){ activityLogCache = a; activityLogCache.sort(function(x,y){return new Date(y.timestamp)-new Date(x.timestamp)}); });
+}
+
+// ========== ROUTER ==========
+var PAGE_NAMES = {
   '#dashboard':'Dashboard','#customers-all':'All Customers','#customers-new-leads':'New Leads',
   '#customers-interested':'Interested','#customers-hot-leads':'Hot Leads','#customers-follow-ups':'Follow Ups',
   '#deals-won':'Won Deals','#deals-lost':'Lost Deals','#notes':'Notes','#settings':'Settings','#tasks':'Tasks'
 };
 
-const ROUTES = {
-  '#dashboard': renderDashboard,'#customers-all': renderAllCustomers,
-  '#customers-new-leads':()=>renderCustomerTable({filterFn:c=>c.status==='New Lead',title:'New Leads',extraColumns:[]}),
-  '#customers-interested':()=>renderCustomerTable({filterFn:c=>c.status==='Interested Customer',title:'Interested Customers',extraColumns:[]}),
-  '#customers-hot-leads':()=>renderCustomerTable({filterFn:c=>c.status==='Hot Lead',title:'Hot Leads',extraColumns:[]}),
-  '#customers-follow-ups':()=>renderCustomerTable({filterFn:c=>c.status==='Follow Up',title:'Follow Ups',extraColumns:[]}),
-  '#deals-won':()=>renderCustomerTable({filterFn:c=>c.status==='Won Deal',title:'Won Deals',extraColumns:[{label:'Deal Value',render:c=>c.dealValue?'<strong>$'+c.dealValue+'</strong>':'—'},{label:'Product',render:c=>c.product||'—'}]}),
-  '#deals-lost':()=>renderCustomerTable({filterFn:c=>c.status==='Lost Deal',title:'Lost Deals',extraColumns:[{label:'Lost Reason',render:c=>c.lostReason||'—'}]}),
-  '#notes': renderNotes,'#settings': renderSettings,'#tasks': renderTasks
-};
+var ROUTES = {};
 
-function router() {
-  const hash = window.location.hash || '#dashboard';
-  if(hash.startsWith('#customer/')){
-    const id = hash.replace('#customer/','');
-    if(chartInstance){chartInstance.destroy();chartInstance=null;}
-    document.getElementById('page-title').textContent='Customer Detail';
+function router(){
+  var hash = window.location.hash || '#dashboard';
+  if(hash.indexOf('#customer/')===0){
+    if(chartInstance){ chartInstance.destroy(); chartInstance=null; }
+    document.getElementById('page-title').textContent = 'Customer Detail';
     updateSidebarActive('');
-    renderCustomerDetail(id);return;
+    renderCustomerDetail(hash.replace('#customer/','')); return;
   }
-  if(hash!=='#dashboard'&&chartInstance){chartInstance.destroy();chartInstance=null;}
-  document.getElementById('page-title').textContent=PAGE_NAMES[hash]||'Dashboard';
+  if(hash!=='#dashboard' && chartInstance){ chartInstance.destroy(); chartInstance=null; }
+  document.getElementById('page-title').textContent = PAGE_NAMES[hash]||'Dashboard';
   updateSidebarActive(hash);
-  if(ROUTES[hash])ROUTES[hash]();else document.getElementById('content').innerHTML='';
+  if(ROUTES[hash]) ROUTES[hash](); else document.getElementById('content').innerHTML='';
 }
-window.addEventListener('hashchange',router);
+window.addEventListener('hashchange', router);
 
-/* ============================
-   MODAL
-   ============================ */
-let currentEditCustomer = null;
-
+// ========== MODAL ==========
 function closeModal(){
   document.getElementById('modal-overlay').innerHTML='';
   document.body.classList.remove('modal-open');
-  currentEditCustomer=null;
 }
 
-function handleEscape(e){if(e.key==='Escape')closeModal()}
+function handleEscape(e){ if(e.key==='Escape') closeModal(); }
 
-function showCustomerModal(customer=null){
-  currentEditCustomer=customer;
-  const isEdit=customer!==null;
-  const srcOpts=AppConfig.SOURCES.map(s=>'<option value="'+s+'"'+(isEdit&&customer.source===s?' selected':'')+'>'+s+'</option>').join('');
-  const stsOpts=AppConfig.STATUSES.map(s=>'<option value="'+s.key+'"'+(isEdit&&customer.status===s.key?' selected':'')+'>'+s.key+'</option>').join('');
-  const html=`
-    <div class="modal-backdrop">
-      <div class="modal-panel">
-        <div class="modal-header"><h2 class="modal-title">${isEdit?'Edit Customer':'Add Customer'}</h2><button class="modal-close-btn">&times;</button></div>
-        <div class="modal-body">
-          <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="modal-name" class="form-input" placeholder="Enter full name" value="${isEdit?customer.fullName:''}"><span id="err-name" class="form-error">Required</span></div>
-          <div class="form-group"><label class="form-label">Phone *</label><input type="text" id="modal-phone" class="form-input" placeholder="+20 1XX XXX XXXX" value="${isEdit?customer.phone:''}"><span id="err-phone" class="form-error">Required</span></div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Email</label><input type="email" id="modal-email" class="form-input" placeholder="email@example.com" value="${isEdit?customer.email||'':''}"></div>
-            <div class="form-group"><label class="form-label">Company</label><input type="text" id="modal-company" class="form-input" placeholder="Company name" value="${isEdit?customer.company||'':''}"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Source</label><select id="modal-source" class="form-select">${srcOpts}</select></div>
-            <div class="form-group"><label class="form-label">Status</label><select id="modal-status" class="form-select">${stsOpts}</select></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Last Contact</label><input type="date" id="modal-last-contact" class="form-input" value="${isEdit?customer.lastContactDate||'':''}"></div>
-            <div class="form-group"><label class="form-label">Next Follow Up</label><input type="date" id="modal-follow-up" class="form-input" value="${isEdit?customer.nextFollowUpDate||'':''}"></div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary modal-cancel">Cancel</button>
-          <button class="btn-primary btn-sm modal-submit" style="width:auto">${isEdit?'Update Customer':'Save Customer'}</button>
-        </div>
-      </div>
-    </div>`;
-  document.getElementById('modal-overlay').innerHTML=html;
+function showCustomerModal(customer){
+  currentEditCustomer = customer || null;
+  var isEdit = !!customer;
+  var srcOpts = AppConfig.SOURCES.map(function(s){ return '<option value="'+s+'"'+(isEdit&&customer.source===s?' selected':'')+'>'+s+'</option>'; }).join('');
+  var stsOpts = AppConfig.STATUSES.map(function(s){ return '<option value="'+s.key+'"'+(isEdit&&customer.status===s.key?' selected':'')+'>'+s.key+'</option>'; }).join('');
+
+  var html = '<div class="modal-backdrop"><div class="modal-panel">';
+  html += '<div class="modal-header"><h2 class="modal-title">'+(isEdit?'Edit Customer':'Add Customer')+'</h2><button class="modal-close-btn">&times;</button></div>';
+  html += '<div class="modal-body">';
+  html += '<div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="modal-name" class="form-input" placeholder="Enter full name" value="'+(isEdit?customer.fullName:'')+'"><span id="err-name" class="form-error">Required</span></div>';
+  html += '<div class="form-group"><label class="form-label">Phone *</label><input type="text" id="modal-phone" class="form-input" placeholder="+20 1XX XXX XXXX" value="'+(isEdit?customer.phone:'')+'"><span id="err-phone" class="form-error">Required</span></div>';
+  html += '<div class="form-row"><div class="form-group"><label class="form-label">Email</label><input type="email" id="modal-email" class="form-input" placeholder="email@example.com" value="'+(isEdit?(customer.email||''):'')+'"></div><div class="form-group"><label class="form-label">Company</label><input type="text" id="modal-company" class="form-input" placeholder="Company name" value="'+(isEdit?(customer.company||''):'')+'"></div></div>';
+  html += '<div class="form-row"><div class="form-group"><label class="form-label">Source</label><select id="modal-source" class="form-select">'+srcOpts+'</select></div><div class="form-group"><label class="form-label">Status</label><select id="modal-status" class="form-select">'+stsOpts+'</select></div></div>';
+  html += '<div class="form-row"><div class="form-group"><label class="form-label">Last Contact</label><input type="date" id="modal-last-contact" class="form-input" value="'+(isEdit?(customer.lastContactDate||''):'')+'"></div><div class="form-group"><label class="form-label">Next Follow Up</label><input type="date" id="modal-follow-up" class="form-input" value="'+(isEdit?(customer.nextFollowUpDate||''):'')+'"></div></div>';
+  html += '</div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">'+(isEdit?'Update Customer':'Save Customer')+'</button></div>';
+  html += '</div></div>';
+
+  document.getElementById('modal-overlay').innerHTML = html;
   document.body.classList.add('modal-open');
-  document.querySelector('.modal-close-btn').addEventListener('click',closeModal);
-  document.querySelector('.modal-cancel').addEventListener('click',closeModal);
-  document.querySelector('.modal-backdrop').addEventListener('click',e=>{if(e.target.classList.contains('modal-backdrop'))closeModal()});
-  document.addEventListener('keydown',handleEscape);
-  document.querySelector('.modal-submit').addEventListener('click',()=>handleModalSubmit());
+  document.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  document.querySelector('.modal-cancel').addEventListener('click', closeModal);
+  document.querySelector('.modal-backdrop').addEventListener('click', function(e){ if(e.target.classList.contains('modal-backdrop')) closeModal(); });
+  document.addEventListener('keydown', handleEscape);
+  document.querySelector('.modal-submit').addEventListener('click', function(){ handleModalSubmit(); });
 }
 
-async function handleModalSubmit(){
-  const name=document.getElementById('modal-name').value.trim();
-  const phone=document.getElementById('modal-phone').value.trim();
-  let valid=true;
-  document.getElementById('err-name').classList.toggle('visible',!name);
-  document.getElementById('err-phone').classList.toggle('visible',!phone);
-  if(!name||!phone)return;
-  const data={
-    fullName:name,phone,
-    email:document.getElementById('modal-email').value.trim(),
-    company:document.getElementById('modal-company').value.trim(),
-    source:document.getElementById('modal-source').value,
-    status:document.getElementById('modal-status').value,
-    lastContactDate:document.getElementById('modal-last-contact').value,
-    nextFollowUpDate:document.getElementById('modal-follow-up').value
+function handleModalSubmit(){
+  var name = document.getElementById('modal-name').value.trim();
+  var phone = document.getElementById('modal-phone').value.trim();
+  document.getElementById('err-name').classList.toggle('visible', !name);
+  document.getElementById('err-phone').classList.toggle('visible', !phone);
+  if(!name||!phone) return;
+
+  var data = {
+    fullName:name, phone:phone,
+    email: document.getElementById('modal-email').value.trim(),
+    company: document.getElementById('modal-company').value.trim(),
+    source: document.getElementById('modal-source').value,
+    status: document.getElementById('modal-status').value,
+    lastContactDate: document.getElementById('modal-last-contact').value,
+    nextFollowUpDate: document.getElementById('modal-follow-up').value
   };
-  const sid=AppAuth.getSession();const uid=sid?sid.id:null;
+  var sid = AppAuth.getSession(), uid = sid?s.id:null;
+
   if(currentEditCustomer){
-    const updated={...currentEditCustomer,...data,updatedAt:new Date().toISOString()};
-    await AppDB.saveCustomer(updated);
-    await AppDB.addAuditLog(uid,'updated','customer',currentEditCustomer.id,'Customer updated');
-    AppUI.showToast('Customer updated','success');
-  }else{
-    const cid='cust_'+Date.now();
-    const created={...data,id:cid,assignedTo:null,dealValue:null,product:null,lostReason:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
-    await AppDB.saveCustomer(created);
-    await AppDB.addAuditLog(uid,'created','customer',cid,'New customer added');
-    AppUI.showToast('Customer created','success');
+    var updated = Object.assign({}, currentEditCustomer, data, {updatedAt: new Date().toISOString()});
+    AppDB.saveCustomer(updated).then(function(){
+      return AppDB.addAuditLog(uid,'updated','customer',currentEditCustomer.id,'Customer updated');
+    }).then(function(){ closeModal(); return refreshCache(); }).then(function(){ router(); AppUI.showToast('Customer updated','success'); });
+  } else {
+    var cid = 'cust_'+Date.now();
+    var created = Object.assign({}, data, {id:cid,assignedTo:null,dealValue:null,product:null,lostReason:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    AppDB.saveCustomer(created).then(function(){
+      return AppDB.addAuditLog(uid,'created','customer',cid,'New customer added');
+    }).then(function(){ closeModal(); return refreshCache(); }).then(function(){ router(); AppUI.showToast('Customer created','success'); });
   }
-  closeModal();await refreshCache();router();
 }
+
+// ========== DASHBOARD ==========
+function renderDashboard(){
+  return refreshCache().then(function(){
+    var total = customersCache.length;
+    var newLeads = customersCache.filter(function(c){return c.status==='New Lead'}).length;
+    var interested = customersCache.filter(function(c){return c.status==='Interested Customer'}).length;
+    var hotLeads = customersCache.filter(function(c){return c.status==='Hot Lead'}).length;
+    var followUps = customersCache.filter(function(c){return c.status==='Follow Up'}).length;
+    var wonDeals = customersCache.filter(function(c){return c.status==='Won Deal'}).length;
+    var lostDeals = customersCache.filter(function(c){return c.status==='Lost Deal'}).length;
+    var dealValue = customersCache.filter(function(c){return c.status==='Won Deal'}).reduce(function(s,c){return s+(c.dealValue||0)},0);
+
+    var icons = {
+      total: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      newLead: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
+      interested: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H16zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
+      hotLead: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.435-2.85 1-4z"/></svg>',
+      followUp: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+      won: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+      lost: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      money: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
+    };
+    var bgs = {total:'#EFF6FF',newLead:'#EFF6FF',interested:'#FFFBEB',hotLead:'#FEF2F2',followUp:'#F5F3FF',won:'#ECFDF5',lost:'#F9FAFB',money:'#EFF6FF'};
+    var clrs = {total:'#3B82F6',newLead:'#3B82F6',interested:'#F59E0B',hotLead:'#EF4444',followUp:'#8B5CF6',won:'#10B981',lost:'#6B7280',money:'#3B82F6'};
+
+    function card(label,val,key,icon){ return '<div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">'+label+'</p><h2 class="stat-card__value">'+val+'</h2><p class="stat-card__trend">In pipeline</p></div><div class="stat-card__icon-wrap" style="background:'+bgs[key]+';color:'+clrs[key]+'">'+icon+'</div></div>'; }
+
+    var statHTML = card('Total Customers',total,'total',icons.total) + card('New Leads',newLeads,'newLead',icons.newLead) + card('Interested',interested,'interested',icons.interested) + card('Hot Leads',hotLeads,'hotLead',icons.hotLead) + card('Follow Ups',followUps,'followUp',icons.followUp) + card('Won Deals',wonDeals,'won',icons.won) + card('Lost Deals',lostDeals,'lost',icons.lost) + card('Deal Value','$'+dealValue.toLocaleString(),'money',icons.money);
+
+    var recent = activityLogCache.slice(0,10);
+    var actHTML = recent.length ? recent.map(function(a){ return '<div class="activity-item"><div class="activity-dot" style="background:'+getDotColor(a.action)+'"></div><div class="activity-content"><p>'+escHtml(a.details||'')+'</p><span class="activity-time">'+AppUI.formatTimeAgo(a.timestamp)+'</span></div></div>'; }).join('') : '<p class="empty-state">No recent activity.</p>';
+
+    var srcCounts = {};
+    customersCache.forEach(function(c){ srcCounts[c.source] = (srcCounts[c.source]||0)+1; });
+    var srcEntries = Object.entries(srcCounts).sort(function(a,b){return b[1]-a[1]});
+    var chartColors = ['#3B82F6','#F59E0B','#EF4444','#8B5CF6','#10B981','#6B7280','#EC4899','#14B8A6'];
+    var legHTML = srcEntries.map(function(e,i){ return '<div class="legend-item"><div class="legend-dot" style="background:'+chartColors[i%8]+'"></div><span class="legend-label">'+e[0]+'</span><span class="legend-value">'+e[1]+'</span><span class="legend-pct">'+Math.round(e[1]/total*100)+'%</span></div>'; }).join('');
+
+    var fu = customersCache.filter(function(c){return c.nextFollowUpDate&&c.status!=='Won Deal'&&c.status!=='Lost Deal'}).sort(function(a,b){return new Date(a.nextFollowUpDate)-new Date(b.nextFollowUpDate)}).slice(0,5);
+    var fuHTML = fu.length ? fu.map(function(c){ return '<tr onclick="location.hash=\'#customer/'+c.id+'\'"><td><div class="td-with-avatar">'+AppUI.avatarCircle(c.fullName)+'<span>'+c.fullName+'</span></div></td><td>'+c.phone+'</td><td>'+AppUI.statusBadge(c.status)+'</td><td>'+c.nextFollowUpDate+'</td><td onclick="event.stopPropagation()"><div class="action-btns"><button class="btn-icon btn-phone" onclick="window.open(\'tel:'+c.phone+'\')" title="Call"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button><button class="btn-icon btn-message" onclick="window.open(\'mailto:'+(c.email||'')+'\')" title="Message"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button></div></td></tr>'; }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted)">No upcoming follow-ups</td></tr>';
+
+    document.getElementById('content').innerHTML = '<div class="stat-cards">'+statHTML+'</div><div class="dashboard-grid"><div class="dashboard-panel"><div class="panel-header"><h3>Recent Activity</h3><button class="btn-link" onclick="showActivityModal()">View All</button></div><div class="activity-list">'+actHTML+'</div></div><div class="dashboard-panel"><div class="panel-header"><h3>Customers by Source</h3></div><div class="chart-wrap"><canvas id="source-chart"></canvas></div><div class="chart-legend">'+legHTML+'</div></div></div><div class="dashboard-panel"><div class="panel-header"><h3>Upcoming Follow-ups</h3></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Customer</th><th>Phone</th><th>Status</th><th>Next Follow Up</th><th>Actions</th></tr></thead><tbody>'+fuHTML+'</tbody></table></div></div>';
+
+    setTimeout(function(){
+      var canvas = document.getElementById('source-chart');
+      if(canvas){
+        if(chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(canvas.getContext('2d'),{
+          type:'doughnut',
+          data:{labels:srcEntries.map(function(e){return e[0]}),datasets:[{data:srcEntries.map(function(e){return e[1]}),backgroundColor:srcEntries.map(function(_,i){return chartColors[i%8]}),borderWidth:0}]},
+          options:{plugins:{legend:{display:false}},cutout:'65%',responsive:true,maintainAspectRatio:false}
+        });
+      }
+    },50);
+  });
+}
+
+function getDotColor(action){
+  var m = {created:'#3B82F6',updated:'#F59E0B',deleted:'#EF4444',status_changed:'#8B5CF6',note_added:'#10B981',note_deleted:'#6B7280',assigned:'#EC4899'};
+  return m[action]||'#94A3B8';
+}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showActivityModal(){
+  var html = '<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">All Activity</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body" style="max-height:60vh;overflow-y:auto">';
+  html += activityLogCache.map(function(a){ return '<div class="activity-item"><div class="activity-dot" style="background:'+getDotColor(a.action)+'"></div><div class="activity-content"><p>'+escHtml(a.details||'')+'</p><span class="activity-time">'+AppUI.formatTimeAgo(a.timestamp)+'</span></div></div>'; }).join('');
+  html += '</div></div></div>';
+  document.getElementById('modal-overlay').innerHTML = html;
+  document.body.classList.add('modal-open');
+  document.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  document.querySelector('.modal-backdrop').addEventListener('click', function(e){ if(e.target.classList.contains('modal-backdrop')) closeModal(); });
+  document.addEventListener('keydown', handleEscape);
+}
+
+// ========== CUSTOMER TABLE ==========
+function sortArrow(col){ if(sortColumn!==col) return '<span class="sort-arrow"></span>'; return sortDir==='asc'?'<span class="sort-arrow">↑</span>':'<span class="sort-arrow">↓</span>'; }
+function sortCustomers(col){ if(sortColumn===col) sortDir=sortDir==='asc'?'desc':'asc'; else { sortColumn=col; sortDir='asc'; } updateCustomerTable(); }
+
+function getFilteredCustomers(){
+  var filtered = customersCache.filter(function(c){
+    var q = currentSearchQuery;
+    var match = !q||c.fullName.toLowerCase().indexOf(q)!==-1||c.phone.indexOf(q)!==-1||(c.email&&c.email.toLowerCase().indexOf(q)!==-1);
+    var filter = currentTableConfig.filterFn ? currentTableConfig.filterFn(c) : true;
+    return match && filter;
+  });
+  filtered.sort(function(a,b){
+    var av = (a[sortColumn]||'').toString().toLowerCase();
+    var bv = (b[sortColumn]||'').toString().toLowerCase();
+    return sortDir==='asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  return filtered;
+}
+
+function buildTableRows(filtered){
+  var extraCols = currentTableConfig.extraColumns||[];
+  var extraHeaders = extraCols.map(function(col){ return '<th>'+col.label+'</th>'; }).join('');
+  if(!filtered.length) return '<div class="empty-state"><p>No customers found.</p><button onclick="currentSearchQuery=\'\';updateCustomerTable()">Clear Search</button></div>';
+  return '<div class="table-wrap"><table class="data-table"><thead><tr><th onclick="sortCustomers(\'fullName\')">Name '+sortArrow('fullName')+'</th><th onclick="sortCustomers(\'phone\')">Phone '+sortArrow('phone')+'</th><th onclick="sortCustomers(\'email\')">Email '+sortArrow('email')+'</th><th onclick="sortCustomers(\'source\')">Source '+sortArrow('source')+'</th><th onclick="sortCustomers(\'status\')">Status '+sortArrow('status')+'</th><th onclick="sortCustomers(\'lastContactDate\')">Last Contact '+sortArrow('lastContactDate')+'</th>'+extraHeaders+'<th>Actions</th></tr></thead><tbody>'+filtered.map(function(c){ return '<tr onclick="location.hash=\'#customer/'+c.id+'\'"><td><div class="td-with-avatar">'+AppUI.avatarCircle(c.fullName)+'<span>'+c.fullName+'</span></div></td><td>'+c.phone+'</td><td>'+(c.email||'—')+'</td><td>'+c.source+'</td><td>'+AppUI.statusBadge(c.status)+'</td><td>'+(c.lastContactDate||'—')+'</td>'+extraCols.map(function(col){ return '<td>'+col.render(c)+'</td>'; }).join('')+'<td onclick="event.stopPropagation()"><div class="action-btns"><button class="btn-icon btn-edit" onclick="showCustomerModal(customersCache.find(function(x){return x.id===\''+c.id+'\'}))" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-icon btn-delete" onclick="deleteCustomer(\''+c.id+'\')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td></tr>'; }).join('')+'</tbody></table></div>';
+}
+
+function updateCustomerTable(){
+  var filtered = getFilteredCustomers();
+  var countEl = document.querySelector('.page-count');
+  var tableCard = document.querySelector('.table-card');
+  if(countEl) countEl.textContent = '('+filtered.length+')';
+  if(tableCard) tableCard.innerHTML = buildTableRows(filtered);
+}
+
+function renderCustomerTable(config){
+  currentTableConfig = config;
+  sortColumn='fullName'; sortDir='asc';
+  return refreshCache().then(function(){
+    var filtered = getFilteredCustomers();
+    document.getElementById('content').innerHTML = '<div class="page-header"><div class="page-header-left"><h2>'+config.title+'</h2><span class="page-count">('+filtered.length+')</span></div><div class="page-header-right"><div class="page-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="customer-search" placeholder="Search..." value="'+currentSearchQuery+'"></div><button class="btn-primary btn-sm" onclick="showCustomerModal()" style="width:auto">+ Add Customer</button></div></div><div class="table-card">'+buildTableRows(filtered)+'</div>';
+    var si = document.getElementById('customer-search');
+    if(si) si.addEventListener('input', function(e){ currentSearchQuery = e.target.value.toLowerCase(); updateCustomerTable(); });
+  });
+}
+
+function renderAllCustomers(){ return renderCustomerTable({filterFn:null,title:'All Customers',extraColumns:[]}); }
+
+function deleteCustomer(id){
+  if(!confirm('Delete this customer? This cannot be undone.')) return;
+  var uid = AppAuth.getSession()?AppAuth.getSession().id:null;
+  AppDB.deleteCustomer(id).then(function(){
+    return AppDB.addAuditLog(uid,'deleted','customer',id,'Customer deleted');
+  }).then(function(){ return refreshCache(); }).then(function(){ updateCustomerTable(); AppUI.showToast('Customer deleted','success'); });
+}
+
+// ========== CUSTOMER DETAIL ==========
+function renderCustomerDetail(id){
+  return refreshCache().then(function(){
+    var customer = customersCache.find(function(c){return c.id===id});
+    if(!customer){ document.getElementById('content').innerHTML='<div class="empty-state"><h2>Customer not found</h2><button onclick="location.hash=\'#customers-all\'">Back to All Customers</button></div>'; return; }
+    var statusObj = AppConfig.STATUSES.find(function(s){return s.key===customer.status});
+    var stsOpts = AppConfig.STATUSES.map(function(s){ return '<option value="'+s.key+'"'+(customer.status===s.key?' selected':'')+'>'+s.key+'</option>'; }).join('');
+    return AppDB.getNotes(customer.id).then(function(notes){
+      notes.sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt)});
+      var notesHtml = notes.length ? notes.map(function(n){ return '<div class="note-item"><p class="note-text">'+escHtml(n.text)+'</p><div class="note-meta"><span>'+AppUI.formatTimeAgo(n.createdAt)+'</span><button class="note-delete-btn" onclick="deleteNote(\''+customer.id+'\','+n.id+')">&times;</button></div></div>'; }).join('') : '<p style="text-align:center;color:var(--color-text-muted);padding:32px 0">No notes yet.</p>';
+      var wonExtra = customer.status==='Won Deal' ? '<div class="detail-field"><span class="detail-label">Deal Value</span><span class="detail-value"><strong>$'+(customer.dealValue||0)+'</strong></span></div><div class="detail-field"><span class="detail-label">Product</span><span class="detail-value">'+(customer.product||'—')+'</span></div>' : '';
+      var lostExtra = customer.status==='Lost Deal' ? '<div class="detail-field"><span class="detail-label">Lost Reason</span><span class="detail-value">'+(customer.lostReason||'—')+'</span></div>' : '';
+      document.getElementById('content').innerHTML = '<div class="detail-back-bar"><button class="btn-back" onclick="history.back()">&larr; Back</button><h2>'+customer.fullName+'</h2></div><div class="detail-columns"><div class="detail-left"><div class="detail-card"><div class="detail-card-header"><h3>Customer Information</h3><button class="btn-primary btn-sm" onclick="showCustomerModal(customersCache.find(function(c){return c.id===\''+customer.id+'\'}))" style="width:auto">Edit Customer</button></div><div class="detail-fields"><div class="detail-field"><span class="detail-label">Full Name</span><span class="detail-value">'+customer.fullName+'</span></div><div class="detail-field"><span class="detail-label">Phone</span><span class="detail-value">'+customer.phone+'</span></div><div class="detail-field"><span class="detail-label">Email</span><span class="detail-value">'+(customer.email||'—')+'</span></div><div class="detail-field"><span class="detail-label">Company</span><span class="detail-value">'+(customer.company||'—')+'</span></div><div class="detail-field"><span class="detail-label">Source</span><span class="detail-value">'+customer.source+'</span></div><div class="detail-field"><span class="detail-label">Status</span><span class="detail-value">'+AppUI.statusBadge(customer.status)+'</span></div><div class="detail-field"><span class="detail-label">Change Status</span><span class="detail-value"><select class="form-select" onchange="changeStatus(\''+customer.id+'\',this.value)">'+stsOpts+'</select></span></div><div class="detail-field"><span class="detail-label">Last Contact</span><span class="detail-value">'+(customer.lastContactDate||'—')+'</span></div><div class="detail-field"><span class="detail-label">Next Follow Up</span><span class="detail-value">'+(customer.nextFollowUpDate||'—')+'</span></div>'+wonExtra+lostExtra+'</div></div></div><div class="detail-right"><div class="detail-card"><h3 style="margin-bottom:16px">Notes</h3><div class="note-add"><textarea id="note-input" placeholder="Add a note..." rows="3"></textarea><button class="btn-primary btn-sm" onclick="addNote(\''+customer.id+'\')" style="width:auto">Add Note</button></div><div class="notes-list">'+notesHtml+'</div></div></div></div>';
+    });
+  });
+}
+
+function changeStatus(customerId, newStatus){
+  var customer = customersCache.find(function(c){return c.id===customerId});
+  if(!customer) return;
+  var oldStatus = customer.status;
+  customer.status = newStatus;
+  customer.updatedAt = new Date().toISOString();
+  var uid = AppAuth.getSession()?AppAuth.getSession().id:null;
+  AppDB.saveCustomer(customer).then(function(){
+    return AppDB.addAuditLog(uid,'status_changed','customer',customerId,'Status changed from '+oldStatus+' to '+newStatus);
+  }).then(function(){ return refreshCache(); }).then(function(){ renderCustomerDetail(customerId); AppUI.showToast('Status updated','success'); });
+}
+
+function addNote(customerId){
+  var text = document.getElementById('note-input').value.trim();
+  if(!text) return;
+  var uid = AppAuth.getSession()?AppAuth.getSession().id:null;
+  AppDB.saveNote({customerId:customerId,userId:uid,text:text}).then(function(){
+    return AppDB.addAuditLog(uid,'note_added','customer',customerId,'Note added');
+  }).then(function(){ return refreshCache(); }).then(function(){ renderCustomerDetail(customerId); AppUI.showToast('Note added','success'); });
+}
+
+function deleteNote(customerId, noteId){
+  var uid = AppAuth.getSession()?AppAuth.getSession().id:null;
+  AppDB.deleteNote(noteId).then(function(){
+    return AppDB.addAuditLog(uid,'note_deleted','customer',customerId,'Note deleted');
+  }).then(function(){ renderCustomerDetail(customerId); });
+}
+
+// ========== NOTES PAGE ==========
+function getFilteredNotes(){
+  return customersCache.reduce(function(arr,c){
+    if(c.notes) c.notes.forEach(function(n){ arr.push(Object.assign({},n,{customerName:c.fullName,customerId:c.id})); });
+    return arr;
+  },[]).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt)}).filter(function(n){return n.customerName.toLowerCase().indexOf(notesSearchQuery)!==-1||n.text.toLowerCase().indexOf(notesSearchQuery)!==-1});
+}
+
+function buildNotesFeedHtml(f){
+  if(!f.length) return '<div class="empty-state"><p>No notes found.</p></div>';
+  return f.map(function(n){
+    return '<div class="note-feed-item">'+AppUI.avatarCircle(n.customerName)+'<div class="note-feed-body"><p class="note-feed-customer"><a href="#" onclick="event.preventDefault();location.hash=\'#customer/'+n.customerId+'\'">'+n.customerName+'</a></p><p class="note-feed-text">'+escHtml(n.text)+'</p><p class="note-feed-date">'+AppUI.formatTimeAgo(n.createdAt)+'</p></div></div>';
+  }).join('');
+}
+
+function updateNotesFeed(){
+  var f = getFilteredNotes();
+  var c = document.querySelector('.page-count');
+  var fe = document.querySelector('.notes-feed');
+  if(c) c.textContent = '('+f.length+')';
+  if(fe) fe.innerHTML = buildNotesFeedHtml(f);
+}
+
+function renderNotes(){
+  notesSearchQuery = '';
+  return refreshCache().then(function(){
+    var f = getFilteredNotes();
+    document.getElementById('content').innerHTML = '<div class="page-header"><div class="page-header-left"><h2>Notes & Questions</h2><span class="page-count">('+f.length+')</span></div><div class="page-header-right"><div class="page-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="notes-search" placeholder="Search notes..."></div></div></div><div class="notes-feed">'+buildNotesFeedHtml(f)+'</div>';
+    var si = document.getElementById('notes-search');
+    if(si) si.addEventListener('input', function(e){ notesSearchQuery = e.target.value.toLowerCase(); updateNotesFeed(); });
+  });
+}
+
+// ========== SETTINGS ==========
+function renderSettings(){
+  return AppDB.getSetting('theme').then(function(s){
+    var theme = (s||{}).value||'light';
+    document.getElementById('content').innerHTML = '<div class="page-header"><h2>Settings</h2></div><div style="margin-bottom:32px"><h3 style="margin-bottom:6px">Appearance</h3><p style="color:var(--color-text-secondary);font-size:var(--font-sm);margin-bottom:20px">Choose your preferred theme.</p><div style="display:flex;gap:20px">'+['light','dark'].map(function(t){ return '<div class="theme-card" onclick="setTheme(\''+t+'\')" style="border:2px solid '+(theme===t?'var(--color-accent)':'var(--color-border)')+';border-radius:12px;padding:16px;width:180px;cursor:pointer;text-align:center"><div style="height:80px;border-radius:8px;margin-bottom:12px;background:'+(t==='dark'?'#0F172A':'#F8FAFC')+';border:1px solid '+(t==='dark'?'#334155':'#E2E8F0')+';display:flex"><div style="width:30%;background:'+(t==='dark'?'#020617':'#0F172A')+';border-radius:6px 0 0 6px"></div><div style="flex:1;padding:6px"><div style="height:6px;background:'+(t==='dark'?'#1E293B':'#FFF')+';border-radius:3px;margin-bottom:4px;border:1px solid '+(t==='dark'?'#334155':'#E2E8F0')+'"></div><div style="flex:1;background:'+(t==='dark'?'#1E293B':'#FFF')+';border-radius:3px;border:1px solid '+(t==='dark'?'#334155':'#E2E8F0')+'"></div></div></div><span style="font-size:var(--font-sm);font-weight:600">'+t.charAt(0).toUpperCase()+t.slice(1)+' Mode</span></div>'; }).join('')+'</div></div>';
+  });
+}
+
+function setTheme(t){
+  AppDB.saveSetting('theme',t).then(function(){
+    document.body.classList.toggle('dark-mode', t==='dark');
+    renderSettings();
+  });
+}
+function applyTheme(){ AppDB.getSetting('theme').then(function(s){ if(s) document.body.classList.toggle('dark-mode', s.value==='dark'); }); }
+
+// ========== TASKS ==========
+function renderTasks(){
+  return refreshCache().then(function(){ return AppDB.getTasks(); }).then(function(tasks){
+    document.getElementById('content').innerHTML = '<div class="page-header"><h2>Tasks</h2><button class="btn-primary btn-sm" onclick="showTaskModal()" style="width:auto">+ Add Task</button></div><div class="table-card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Title</th><th>Customer</th><th>Status</th><th>Priority</th><th>Due Date</th><th>Actions</th></tr></thead><tbody>'+(tasks.length?tasks.map(function(t){ var c=customersCache.find(function(x){return x.id===t.customerId}); var ps=AppConfig.TASK_PRIORITIES.find(function(p){return p.key===t.priority}); return '<tr><td><strong>'+t.title+'</strong></td><td>'+(c?c.fullName:'—')+'</td><td>'+t.status+'</td><td><span style="color:'+(ps?ps.color:'#6B7280')+';font-weight:600">'+t.priority+'</span></td><td>'+(t.dueDate||'—')+'</td><td><div class="action-btns"><button class="btn-icon btn-edit" onclick="showTaskModal('+t.id+')" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-icon btn-delete" onclick="deleteTask('+t.id+')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td></tr>'; }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--color-text-muted);padding:32px">No tasks yet.</td></tr>')+'</tbody></table></div></div>';
+  });
+}
+var currentEditTask = null;
+function showTaskModal(task){
+  currentEditTask = task||null;
+  var isEdit = !!task;
+  var custOpts = customersCache.map(function(c){ return '<option value="'+c.id+'"'+(isEdit&&task.customerId===c.id?' selected':'')+'>'+c.fullName+'</option>'; }).join('');
+  var stsOpts = AppConfig.TASK_STATUSES.map(function(s){ return '<option value="'+s+'"'+(isEdit&&task.status===s?' selected':'')+'>'+s+'</option>'; }).join('');
+  var priOpts = AppConfig.TASK_PRIORITIES.map(function(p){ return '<option value="'+p.key+'"'+(isEdit&&task.priority===p.key?' selected':'')+'>'+p.label+'</option>'; }).join('');
+  var html = '<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">'+(isEdit?'Edit Task':'Add Task')+'</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Title *</label><input type="text" id="task-title" class="form-input" placeholder="Task title" value="'+(isEdit?task.title:'')+'"></div><div class="form-group"><label class="form-label">Description</label><textarea id="task-desc" class="form-textarea" rows="2" placeholder="Task details">'+(isEdit?task.description||'':'')+'</textarea></div><div class="form-row"><div class="form-group"><label class="form-label">Customer</label><select id="task-customer" class="form-select"><option value="">None</option>'+custOpts+'</select></div><div class="form-group"><label class="form-label">Status</label><select id="task-status" class="form-select">'+stsOpts+'</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Priority</label><select id="task-priority" class="form-select">'+priOpts+'</select></div><div class="form-group"><label class="form-label">Due Date</label><input type="date" id="task-due" class="form-input" value="'+(isEdit?task.dueDate||'':'')+'"></div></div></div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">'+(isEdit?'Update':'Create')+'</button></div></div></div>';
+  document.getElementById('modal-overlay').innerHTML = html;
+  document.body.classList.add('modal-open');
+  document.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  document.querySelector('.modal-cancel').addEventListener('click', closeModal);
+  document.querySelector('.modal-backdrop').addEventListener('click', function(e){ if(e.target.classList.contains('modal-backdrop')) closeModal(); });
+  document.addEventListener('keydown', handleEscape);
+  document.querySelector('.modal-submit').addEventListener('click', function(){ handleTaskSubmit(); });
+}
+
+function handleTaskSubmit(){
+  var title = document.getElementById('task-title').value.trim();
+  if(!title){ AppUI.showToast('Title is required','error'); return; }
+  var data = {
+    title:title, description:document.getElementById('task-desc').value.trim(),
+    customerId:document.getElementById('task-customer').value||null,
+    status:document.getElementById('task-status').value,
+    priority:document.getElementById('task-priority').value,
+    dueDate:document.getElementById('task-due').value||null
+  };
+  var p;
+  if(currentEditTask){
+    p = AppDB.saveTask(Object.assign({}, currentEditTask, data, {updatedAt:new Date().toISOString()}));
+    p.then(function(){ AppUI.showToast('Task updated','success'); });
+  } else {
+    p = AppDB.saveTask(Object.assign({}, data, {assignedTo:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));
+    p.then(function(){ AppUI.showToast('Task created','success'); });
+  }
+  p.then(function(){ closeModal(); renderTasks(); });
+}
+
+function deleteTask(id){
+  if(!confirm('Delete this task?')) return;
+  AppDB.deleteTask(id).then(function(){ renderTasks(); AppUI.showToast('Task deleted','success'); });
+}
+
+// ========== ROUTE REGISTRATION ==========
+ROUTES['#dashboard'] = function(){ renderDashboard(); };
+ROUTES['#customers-all'] = function(){ renderAllCustomers(); };
+ROUTES['#customers-new-leads'] = function(){ renderCustomerTable({filterFn:function(c){return c.status==='New Lead'},title:'New Leads',extraColumns:[]}); };
+ROUTES['#customers-interested'] = function(){ renderCustomerTable({filterFn:function(c){return c.status==='Interested Customer'},title:'Interested Customers',extraColumns:[]}); };
+ROUTES['#customers-hot-leads'] = function(){ renderCustomerTable({filterFn:function(c){return c.status==='Hot Lead'},title:'Hot Leads',extraColumns:[]}); };
+ROUTES['#customers-follow-ups'] = function(){ renderCustomerTable({filterFn:function(c){return c.status==='Follow Up'},title:'Follow Ups',extraColumns:[]}); };
+ROUTES['#deals-won'] = function(){ renderCustomerTable({filterFn:function(c){return c.status==='Won Deal'},title:'Won Deals',extraColumns:[{label:'Deal Value',render:function(c){return c.dealValue?'<strong>$'+c.dealValue+'</strong>':'—'}},{label:'Product',render:function(c){return c.product||'—'}}]}); };
+ROUTES['#deals-lost'] = function(){ renderCustomerTable({filterFn:function(c){return c.status==='Lost Deal'},title:'Lost Deals',extraColumns:[{label:'Lost Reason',render:function(c){return c.lostReason||'—'}}]}); };
+ROUTES['#notes'] = function(){ renderNotes(); };
+ROUTES['#settings'] = function(){ renderSettings(); };
+ROUTES['#tasks'] = function(){ renderTasks(); };
+
+// ========== LOGIN PAGE ==========
+function showLogin(msg){
+  var overlay = document.createElement('div');
+  overlay.className = 'login-overlay';
+  overlay.innerHTML = '<div class="login-card"><div class="login-logo"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><rect x="3" y="12" width="3" height="9" rx="1"/><rect x="10" y="7" width="3" height="14" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/></svg><span>SalesHub</span></div><h1>Welcome back</h1><p class="login-subtitle">Sign in to your account</p><div class="login-error'+(msg?' visible':'')+'" id="login-error">'+(msg||'')+'</div><div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="login-email" placeholder="admin@saleshub.com" autocomplete="username"></div><div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="login-password" placeholder="Enter password" autocomplete="current-password"></div><div class="form-error" id="login-field-error"></div><button class="btn-primary" id="login-btn">Sign In</button></div>';
+  document.body.appendChild(overlay);
+
+  var emailEl = document.getElementById('login-email');
+  var passEl = document.getElementById('login-password');
+  var btn = document.getElementById('login-btn');
+  var fe = document.getElementById('login-field-error');
+  var le = document.getElementById('login-error');
+
+  function handleLogin(){
+    fe.textContent = ''; fe.classList.remove('visible');
+    if(le){ le.textContent = ''; le.classList.remove('visible'); }
+    var em = emailEl.value.trim(), pw = passEl.value;
+    if(!em){ fe.textContent='Email is required'; fe.classList.add('visible'); return; }
+    if(!pw){ fe.textContent='Password is required'; fe.classList.add('visible'); return; }
+    btn.textContent = 'Signing in...'; btn.disabled = true;
+    AppAuth.login(em, pw).then(function(){
+      overlay.remove();
+      initApp();
+    }).catch(function(err){
+      btn.textContent = 'Sign In'; btn.disabled = false;
+      fe.textContent = err.message; fe.classList.add('visible');
     });
   }
-  function tx(s,m){return db.transaction(s,m).objectStore(s)}
-  function getAll(s){return new Promise((rs,rj)=>{const q=tx(s,"readonly").getAll();q.onsuccess=()=>rs(q.result);q.onerror=()=>rj(q.error)})}
-  function get(s,k){return new Promise((rs,rj)=>{const q=tx(s,"readonly").get(k);q.onsuccess=()=>rs(q.result);q.onerror=()=>rj(q.error)})}
-  function put(s,d){return new Promise((rs,rj)=>{const q=tx(s,"readwrite").put(d);q.onsuccess=()=>rs(q.result);q.onerror=()=>rj(q.error)})}
-  function del(s,k){return new Promise((rs,rj)=>{const q=tx(s,"readwrite").delete(k);q.onsuccess=()=>rs();q.onerror=()=>rj(q.error)})}
-  function count(s){return new Promise((rs,rj)=>{const q=tx(s,"readonly").count();q.onsuccess=()=>rs(q.result);q.onerror=()=>rj(q.error)})}
-  function getCustomers(){return getAll("customers")}
-  function getCustomer(id){return get("customers",id)}
-  function saveCustomer(c){return put("customers",{...c,updatedAt:new Date().toISOString()})}
-  function deleteCustomer(id){return del("customers",id)}
-  function getNotes(cid){return getAll("customer_notes").then(n=>n.filter(x=>x.customerId===cid))}
-  function saveNote(n){return put("customer_notes",{...n,createdAt:new Date().toISOString()})}
-  function deleteNote(id){return del("customer_notes",id)}
-  function getTasks(){return getAll("tasks")}
-  function getTask(id){return get("tasks",id)}
-  function saveTask(t){return put("tasks",{...t,updatedAt:new Date().toISOString()})}
-  function deleteTask(id){return del("tasks",id)}
-  function getNotifications(uid){return getAll("notifications").then(n=>n.filter(x=>x.userId===uid))}
-  function saveNotification(n){return put("notifications",{...n,createdAt:new Date().toISOString()})}
-  function markNotifRead(id){return get("notifications",id).then(n=>{n.isRead=true;return put("notifications",n)})}
-  function addAuditLog(uid,action,etype,eid,det){return put("audit_logs",{userId:uid,action,entityType:etype,entityId:eid,details:det,timestamp:new Date().toISOString()})}
-  function getAuditLogs(){return getAll("audit_logs")}
-  function addAnalyticsEvent(uid,etype,page,target,meta){return put("analytics_events",{userId:uid,eventType:etype,page,target,metadata:JSON.stringify(meta||{}),timestamp:new Date().toISOString()})}
-  function getAnalyticsEvents(){return getAll("analytics_events")}
-  function getSetting(k){return get("settings",k)}
-  function saveSetting(k,v){return put("settings",{key:k,value:v})}
-
-  async function seedAll(){
-    if(await count("customers") > 0) return;
-    const enc = new TextEncoder();
-    const hb = await crypto.subtle.digest("SHA-256",enc.encode("admin123"));
-    const ph = Array.from(new Uint8Array(hb)).map(b=>b.toString(16).padStart(2,"0")).join("");
-    await put("roles",{key:"super_admin",label:"Super Admin",permissions:["all"]});
-    await put("roles",{key:"admin",label:"Admin",permissions:["manage_customers","manage_tasks","view_reports","view_audit"]});
-    await put("roles",{key:"employee",label:"Employee",permissions:["view_assigned_customers","view_assigned_tasks","add_notes"]});
-    await put("users",{name:"Super Admin",email:"admin@saleshub.com",passwordHash:ph,role:"super_admin",createdAt:new Date().toISOString(),avatar:"SA"});
-
-    const sc = [
-      {id:"cust_101",fullName:"Mohamed Salah",phone:"+20 100 111 1111",email:"mohamed@ex.com",company:"TechNile",source:"Facebook Ads",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-06",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_102",fullName:"Nour Ibrahim",phone:"+20 101 222 2222",email:"nour@ex.com",company:"CairoSoft",source:"Website Form",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_103",fullName:"Ahmed Hassan",phone:"+20 102 333 3333",email:"ahmed@ex.com",company:"DeltaTech",source:"Referral",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_104",fullName:"Khaled Mostafa",phone:"+20 103 444 4444",email:"khaled@ex.com",company:"Nile Solutions",source:"Cold Outreach",status:"New Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-31",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-25T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_105",fullName:"Sara Adel",phone:"+20 104 555 5555",email:"sara@ex.com",company:"EduPro",source:"Instagram Ads",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-06",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_106",fullName:"Omar Khaled",phone:"+20 105 666 6666",email:"omar@ex.com",company:"MediSys",source:"Website Form",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_107",fullName:"Layla Mansour",phone:"+20 106 777 7777",email:"layla@ex.com",company:"GreenEnergy",source:"LinkedIn",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-30",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_108",fullName:"Youssef Karim",phone:"+20 107 888 8888",email:"youssef@ex.com",company:"SkyNet",source:"WhatsApp",status:"Interested Customer",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-05-29",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-20T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_109",fullName:"Amr Farouk",phone:"+20 108 999 9999",email:"amr@ex.com",company:"BuildRight",source:"Facebook Ads",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_110",fullName:"Hossam Eddin",phone:"+20 109 000 1111",email:"hossam@ex.com",company:"FinanceHub",source:"LinkedIn",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_111",fullName:"Fatma Ali",phone:"+20 110 222 3333",email:"fatma@ex.com",company:"DesignLab",source:"Referral",status:"Hot Lead",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-15T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_112",fullName:"Mona Said",phone:"+20 111 333 4444",email:"mona@ex.com",company:"FoodChain",source:"Instagram Ads",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:"2024-06-05",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_113",fullName:"Tarek Nasser",phone:"+20 112 444 5555",email:"tarek@ex.com",company:"SafeGuard",source:"Cold Outreach",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:"2024-06-04",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_114",fullName:"Dina Rashed",phone:"+20 113 555 6666",email:"dina@ex.com",company:"TravelPlus",source:"Website Form",status:"Follow Up",assignedTo:null,dealValue:null,product:null,lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:"2024-06-03",createdAt:"2024-05-10T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_115",fullName:"Nadia Youssef",phone:"+20 114 666 7777",email:"nadia@ex.com",company:"SmartWare",source:"Referral",status:"Won Deal",assignedTo:null,dealValue:15000,product:"Enterprise Plan",lostReason:null,lastContactDate:"2024-06-03",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_116",fullName:"Samir Helmy",phone:"+20 115 777 8888",email:"samir@ex.com",company:"CloudBase",source:"LinkedIn",status:"Won Deal",assignedTo:null,dealValue:8500,product:"Professional Plan",lostReason:null,lastContactDate:"2024-06-02",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_117",fullName:"Heba Mahmoud",phone:"+20 116 888 9999",email:"heba@ex.com",company:"DataFlow",source:"Facebook Ads",status:"Won Deal",assignedTo:null,dealValue:4200,product:"Starter Plan",lostReason:null,lastContactDate:"2024-06-01",nextFollowUpDate:null,createdAt:"2024-05-01T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_118",fullName:"Ramy Ezzat",phone:"+20 117 999 0000",email:"ramy@ex.com",company:"AgriCorp",source:"WhatsApp",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"Went with competitor",lastContactDate:"2024-06-03",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_119",fullName:"Sherine Adel",phone:"+20 118 000 1112",email:"sherine@ex.com",company:"FashionLine",source:"Instagram Ads",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"Budget constraints",lastContactDate:"2024-06-02",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()},
-      {id:"cust_120",fullName:"Karim Fouad",phone:"+20 119 111 2223",email:"karim@ex.com",company:"AutoMax",source:"Cold Outreach",status:"Lost Deal",assignedTo:null,dealValue:null,product:null,lostReason:"No response after follow-up",lastContactDate:"2024-06-01",nextFollowUpDate:null,createdAt:"2024-04-20T10:00:00Z",updatedAt:new Date().toISOString()}
-    ];
-    for(const c of sc) await put("customers",c);
-    for(let i=101;i<=120;i++) await put("customer_notes",{customerId:"cust_"+i,userId:1,text:"Initial contact made.",createdAt:new Date().toISOString()});
-    await put("tasks",{title:"Follow up with Mohamed Salah",description:"Call to discuss pricing",assignedTo:null,customerId:"cust_101",status:"todo",priority:"high",dueDate:"2024-06-08",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
-    await put("tasks",{title:"Send proposal to Sara Adel",description:"Prepare and email proposal",assignedTo:null,customerId:"cust_105",status:"in_progress",priority:"urgent",dueDate:"2024-06-05",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
-    await put("tasks",{title:"Demo call with Amr Farouk",description:"Schedule product demo",assignedTo:null,customerId:"cust_109",status:"todo",priority:"medium",dueDate:"2024-06-07",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
-    await put("tasks",{title:"Review competitor analysis",description:"Research pricing for lost deal",assignedTo:null,customerId:"cust_118",status:"todo",priority:"low",dueDate:"2024-06-10",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
-    await put("tasks",{title:"Onboarding for Nadia Youssef",description:"Start enterprise onboarding",assignedTo:null,customerId:"cust_115",status:"in_progress",priority:"medium",dueDate:"2024-06-06",createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
-    console.log("Seed: 3 roles, 1 admin, 20 customers, 20 notes, 5 tasks");
-  }
-
-  return{init,getAll,get,put,del,count,getCustomers,getCustomer,saveCustomer,deleteCustomer,getNotes,saveNote,deleteNote,getTasks,getTask,saveTask,deleteTask,getNotifications,saveNotification,markNotifRead,addAuditLog,getAuditLogs,addAnalyticsEvent,getAnalyticsEvents,getSetting,saveSetting,seedAll};
-})();
-
-/* ============================
-   APPAUTH
-   ============================ */
-const AppAuth = (() => {
-  async function hashPw(pw) {
-    const e = new TextEncoder();
-    const b = await crypto.subtle.digest("SHA-256",e.encode(pw));
-    return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
-  }
-  async function login(email,pw) {
-    const users = await AppDB.getAll("users");
-    const u = users.find(x=>x.email===email);
-    if(!u) throw new Error("Invalid email or password");
-    if(await hashPw(pw) !== u.passwordHash) throw new Error("Invalid email or password");
-    const s = {id:u.id,name:u.name,email:u.email,role:u.role,avatar:u.avatar||u.name.charAt(0).toUpperCase()};
-    sessionStorage.setItem(AppConfig.SESSION_KEY,JSON.stringify(s));
-    return s;
-  }
-  function logout(){sessionStorage.removeItem(AppConfig.SESSION_KEY);location.reload()}
-  function getSession(){const r=sessionStorage.getItem(AppConfig.SESSION_KEY);if(!r)return null;try{return JSON.parse(r)}catch{return null}}
-  function isAuth(){return getSession()!==null}
-  function getRole(){const s=getSession();return s?s.role:null}
-  function hasPerm(p){const r=getRole();if(!r)return false;if(r===AppConfig.ROLES.SUPER_ADMIN)return true;return(AppConfig.PERMISSIONS[r]||[]).includes(p)}
-  async function createUser(d){const h=await hashPw(d.password);return AppDB.put("users",{name:d.name,email:d.email,passwordHash:h,role:d.role||AppConfig.ROLES.EMPLOYEE,createdAt:new Date().toISOString(),avatar:d.name.split(" ").map(w=>w[0]).join("").toUpperCase()})}
-  async function deleteUser(id){return AppDB.del("users",id)}
-  function getUsers(){return AppDB.getAll("users")}
-  return{login,logout,getSession,isAuth,getRole,hasPerm,createUser,deleteUser,getUsers};
-})();
-
-/* ============================
-   APPUI — Helpers
-   ============================ */
-const AppUI = {
-  showToast(msg,type){
-    const c = document.querySelector('.toast-container') || (()=>{const x=document.createElement('div');x.className='toast-container';document.body.appendChild(x);return x})();
-    const t = document.createElement('div');
-    t.className = 'toast toast--'+type;
-    t.textContent = msg;
-    c.appendChild(t);
-    setTimeout(()=>{t.remove();if(!c.children.length)c.remove()},AppConfig.TOAST_DURATION);
-  },
-  /* Helpers */
-  formatTimeAgo(iso){const d=Date.now()-new Date(iso).getTime();const m=Math.floor(d/60000);if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago'},
-  statusBadge(status){const s=AppConfig.STATUSES.find(x=>x.key===status);if(!s)return'<span class="status-badge">'+status+'</span>';return'<span class="status-badge" style="color:'+s.color+';background:'+s.bg+'">'+status+'</span>'},
-  avatarCircle(name){const p=name.split(' ');const i=(p[0]?p[0][0]:'')+(p[1]?p[1][0]:'');return'<div class="avatar-circle">'+i.toUpperCase()+'</div>'},
-  generateId(p){return p+'_'+Date.now()}
-};
-window.AppUI = AppUI;
-
-/* ============================
-   APP STATE
-   ============================ */
-let currentSearchQuery = '';
-let sortColumn = 'fullName';
-let sortDir = 'asc';
-let currentTableConfig = { filterFn: null, title: 'All Customers', extraColumns: [] };
-let chartInstance = null;
-let customersCache = [];
-let activityLogCache = [];
-
-async function refreshCache() {
-  customersCache = await AppDB.getCustomers();
-  activityLogCache = await AppDB.getAuditLogs();
-  activityLogCache.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
-  activityLogCache.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  btn.addEventListener('click', handleLogin);
+  passEl.addEventListener('keydown', function(ev){ if(ev.key==='Enter') handleLogin(); });
 }
 
-/* ============================
-   ROUTER
-   ============================ */
-const PAGE_NAMES = {
-  '#dashboard':'Dashboard','#customers-all':'All Customers','#customers-new-leads':'New Leads',
-  '#customers-interested':'Interested','#customers-hot-leads':'Hot Leads','#customers-follow-ups':'Follow Ups',
-  '#deals-won':'Won Deals','#deals-lost':'Lost Deals','#notes':'Notes','#settings':'Settings','#tasks':'Tasks'
-};
-const ROUTES = {
-  '#dashboard': renderDashboard,'#customers-all': renderAllCustomers,
-  '#customers-new-leads':()=>renderCustomerTable({filterFn:c=>c.status==='New Lead',title:'New Leads',extraColumns:[]}),
-  '#customers-interested':()=>renderCustomerTable({filterFn:c=>c.status==='Interested Customer',title:'Interested Customers',extraColumns:[]}),
-  '#customers-hot-leads':()=>renderCustomerTable({filterFn:c=>c.status==='Hot Lead',title:'Hot Leads',extraColumns:[]}),
-  '#customers-follow-ups':()=>renderCustomerTable({filterFn:c=>c.status==='Follow Up',title:'Follow Ups',extraColumns:[]}),
-  '#deals-won':()=>renderCustomerTable({filterFn:c=>c.status==='Won Deal',title:'Won Deals',extraColumns:[{label:'Deal Value',render:c=>c.dealValue?'<strong>$'+c.dealValue+'</strong>':'—'},{label:'Product',render:c=>c.product||'—'}]}),
-  '#deals-lost':()=>renderCustomerTable({filterFn:c=>c.status==='Lost Deal',title:'Lost Deals',extraColumns:[{label:'Lost Reason',render:c=>c.lostReason||'—'}]}),
-  '#notes': renderNotes,'#settings': renderSettings,'#tasks': renderTasks
-};
-function router() {
-  const hash = window.location.hash || '#dashboard';
-  if(hash.startsWith('#customer/')){
-    if(chartInstance){chartInstance.destroy();chartInstance=null;}
-    document.getElementById('page-title').textContent='Customer Detail';
-    updateSidebarActive('');
-    renderCustomerDetail(hash.replace('#customer/',''));return;
-  }
-  if(hash!=='#dashboard'&&chartInstance){chartInstance.destroy();chartInstance=null;}
-  document.getElementById('page-title').textContent=PAGE_NAMES[hash]||'Dashboard';
-  updateSidebarActive(hash);
-  if(ROUTES[hash])ROUTES[hash]();else document.getElementById('content').innerHTML='';
-}
-window.addEventListener('hashchange',router);
-
-/* ============================
-   MODAL
-   ============================ */
-let currentEditCustomer = null;
-function closeModal(){document.getElementById('modal-overlay').innerHTML='';document.body.classList.remove('modal-open');currentEditCustomer=null}
-function handleEscape(e){if(e.key==='Escape')closeModal()}
-function showCustomerModal(customer=null){
-  currentEditCustomer=customer;const isEdit=customer!==null;
-  const srcOpts=AppConfig.SOURCES.map(s=>'<option value="'+s+'"'+(isEdit&&customer.source===s?' selected':'')+'>'+s+'</option>').join('');
-  const stsOpts=AppConfig.STATUSES.map(s=>'<option value="'+s.key+'"'+(isEdit&&customer.status===s.key?' selected':'')+'>'+s.key+'</option>').join('');
-  const html='<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">'+(isEdit?'Edit Customer':'Add Customer')+'</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="modal-name" class="form-input" placeholder="Enter full name" value="'+(isEdit?customer.fullName:'')+'"><span id="err-name" class="form-error">Required</span></div><div class="form-group"><label class="form-label">Phone *</label><input type="text" id="modal-phone" class="form-input" placeholder="+20 1XX XXX XXXX" value="'+(isEdit?customer.phone:'')+'"><span id="err-phone" class="form-error">Required</span></div><div class="form-row"><div class="form-group"><label class="form-label">Email</label><input type="email" id="modal-email" class="form-input" placeholder="email@example.com" value="'+(isEdit?customer.email||'':'')+'"></div><div class="form-group"><label class="form-label">Company</label><input type="text" id="modal-company" class="form-input" placeholder="Company name" value="'+(isEdit?customer.company||'':'')+'"></div></div><div class="form-row"><div class="form-group"><label class="form-label">Source</label><select id="modal-source" class="form-select">'+srcOpts+'</select></div><div class="form-group"><label class="form-label">Status</label><select id="modal-status" class="form-select">'+stsOpts+'</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Last Contact</label><input type="date" id="modal-last-contact" class="form-input" value="'+(isEdit?customer.lastContactDate||'':'')+'"></div><div class="form-group"><label class="form-label">Next Follow Up</label><input type="date" id="modal-follow-up" class="form-input" value="'+(isEdit?customer.nextFollowUpDate||'':'')+'"></div></div></div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">'+(isEdit?'Update Customer':'Save Customer')+'</button></div></div></div>';
-  document.getElementById('modal-overlay').innerHTML=html;document.body.classList.add('modal-open');
-  document.querySelector('.modal-close-btn').addEventListener('click',closeModal);
-  document.querySelector('.modal-cancel').addEventListener('click',closeModal);
-  document.querySelector('.modal-backdrop').addEventListener('click',e=>{if(e.target.classList.contains('modal-backdrop'))closeModal()});
-  document.addEventListener('keydown',handleEscape);
-  document.querySelector('.modal-submit').addEventListener('click',()=>handleModalSubmit());
-}
-async function handleModalSubmit(){
-  const name=document.getElementById('modal-name').value.trim(),phone=document.getElementById('modal-phone').value.trim();
-  document.getElementById('err-name').classList.toggle('visible',!name);document.getElementById('err-phone').classList.toggle('visible',!phone);
-  if(!name||!phone)return;
-  const data={fullName:name,phone,email:document.getElementById('modal-email').value.trim(),company:document.getElementById('modal-company').value.trim(),source:document.getElementById('modal-source').value,status:document.getElementById('modal-status').value,lastContactDate:document.getElementById('modal-last-contact').value,nextFollowUpDate:document.getElementById('modal-follow-up').value};
-  const sid=AppAuth.getSession();const uid=sid?sid.id:null;
-  if(currentEditCustomer){
-    await AppDB.saveCustomer({...currentEditCustomer,...data,updatedAt:new Date().toISOString()});
-    await AppDB.addAuditLog(uid,'updated','customer',currentEditCustomer.id,'Customer updated');
-    AppUI.showToast('Customer updated','success');
-  }else{
-    const cid='cust_'+Date.now();
-    await AppDB.saveCustomer({...data,id:cid,assignedTo:null,dealValue:null,product:null,lostReason:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
-    await AppDB.addAuditLog(uid,'created','customer',cid,'New customer added');
-    AppUI.showToast('Customer created','success');
-  }
-  closeModal();await refreshCache();router();
-}
-
-/* ============================
-   DASHBOARD
-   ============================ */
-async function renderDashboard(){
-  await refreshCache();
-  const total=customersCache.length,newLeads=customersCache.filter(c=>c.status==='New Lead').length,interested=customersCache.filter(c=>c.status==='Interested Customer').length,hotLeads=customersCache.filter(c=>c.status==='Hot Lead').length,followUps=customersCache.filter(c=>c.status==='Follow Up').length,wonDeals=customersCache.filter(c=>c.status==='Won Deal').length,lostDeals=customersCache.filter(c=>c.status==='Lost Deal').length,dealValue=customersCache.filter(c=>c.status==='Won Deal').reduce((s,c)=>s+(c.dealValue||0),0);
-  const icons={total:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',newLead:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',interested:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H16zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',hotLead:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.435-2.85 1-4z"/></svg>',followUp:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',won:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',lost:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',money:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'};
-  const iconBgs={total:'#EFF6FF',newLead:'#EFF6FF',interested:'#FFFBEB',hotLead:'#FEF2F2',followUp:'#F5F3FF',won:'#ECFDF5',lost:'#F9FAFB',money:'#EFF6FF'},iconClr={total:'#3B82F6',newLead:'#3B82F6',interested:'#F59E0B',hotLead:'#EF4444',followUp:'#8B5CF6',won:'#10B981',lost:'#6B7280',money:'#3B82F6'};
-  const recentActivity=activityLogCache.slice(0,10);
-  const upcomingFollowUps=customersCache.filter(c=>c.nextFollowUpDate&&c.status!=='Won Deal'&&c.status!=='Lost Deal').sort((a,b)=>new Date(a.nextFollowUpDate)-new Date(b.nextFollowUpDate)).slice(0,5);
-  const sourceCounts={};customersCache.forEach(c=>{sourceCounts[c.source]=(sourceCounts[c.source]||0)+1});
-  const sourceEntries=Object.entries(sourceCounts).sort((a,b)=>b[1]-a[1]);
-  const chartColors=['#3B82F6','#F59E0B','#EF4444','#8B5CF6','#10B981','#6B7280','#EC4899','#14B8A6'];
-  document.getElementById('content').innerHTML='<div class="stat-cards">'+buildStatCard('Total Customers',total,'total',icons.total,iconBgs.total,iconClr.total,'Total records')+buildStatCard('New Leads',newLeads,'newLead',icons.newLead,iconBgs.newLead,iconClr.newLead,'New this week')+buildStatCard('Interested',interested,'interested',icons.interested,iconBgs.interested,iconClr.interested,'In pipeline')+buildStatCard('Hot Leads',hotLeads,'hotLead',icons.hotLead,iconBgs.hotLead,iconClr.hotLead,'Priority')+buildStatCard('Follow Ups',followUps,'followUp',icons.followUp,iconBgs.followUp,iconClr.followUp,'Scheduled')+buildStatCard('Won Deals',wonDeals,'won',icons.won,iconBgs.won,iconClr.won,'Closed won')+buildStatCard('Lost Deals',lostDeals,'lost',icons.lost,iconBgs.lost,iconClr.lost,'Closed lost')+buildStatCard('Deal Value','$'+dealValue.toLocaleString(),'money',icons.money,iconBgs.money,iconClr.money,'Total revenue')+'</div><div class="dashboard-grid"><div class="dashboard-panel"><div class="panel-header"><h3>Recent Activity</h3><button class="btn-link" onclick="showActivityModal()">View All</button></div><div class="activity-list">'+(recentActivity.length?recentActivity.map(a=>'<div class="activity-item"><div class="activity-dot" style="background:'+getActivityDotColor(a.action)+'"></div><div class="activity-content"><p>'+escapeHtml(a.details||'')+'</p><span class="activity-time">'+AppUI.formatTimeAgo(a.timestamp)+'</span></div></div>').join(''):'<p class="empty-state">No recent activity.</p>')+'</div></div><div class="dashboard-panel"><div class="panel-header"><h3>Customers by Source</h3></div><div class="chart-wrap"><canvas id="source-chart"></canvas></div><div class="chart-legend">'+sourceEntries.map((e,i)=>'<div class="legend-item"><div class="legend-dot" style="background:'+chartColors[i%8]+'"></div><span class="legend-label">'+e[0]+'</span><span class="legend-value">'+e[1]+'</span><span class="legend-pct">'+Math.round(e[1]/total*100)+'%</span></div>').join('')+'</div></div></div><div class="dashboard-panel"><div class="panel-header"><h3>Upcoming Follow-ups</h3></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Customer</th><th>Phone</th><th>Status</th><th>Next Follow Up</th><th>Actions</th></tr></thead><tbody>'+(upcomingFollowUps.length?upcomingFollowUps.map(c=>'<tr onclick="location.hash=\'#customer/'+c.id+'\'"><td><div class="td-with-avatar">'+AppUI.avatarCircle(c.fullName)+'<span>'+c.fullName+'</span></div></td><td>'+c.phone+'</td><td>'+AppUI.statusBadge(c.status)+'</td><td>'+c.nextFollowUpDate+'</td><td onclick="event.stopPropagation()"><div class="action-btns"><button class="btn-icon btn-phone" onclick="window.open(\'tel:'+c.phone+'\')" title="Call"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button><button class="btn-icon btn-message" onclick="window.open(\'mailto:'+(c.email||'')+'\')" title="Message"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button></div></td></tr>').join(''):'<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted)">No upcoming follow-ups</td></tr>')+'</tbody></table></div></div>';
-  setTimeout(()=>{const canvas=document.getElementById('source-chart');if(canvas){if(chartInstance)chartInstance.destroy();chartInstance=new Chart(canvas.getContext('2d'),{type:'doughnut',data:{labels:sourceEntries.map(e=>e[0]),datasets:[{data:sourceEntries.map(e=>e[1]),backgroundColor:sourceEntries.map((_,i)=>chartColors[i%8]),borderWidth:0}]},options:{plugins:{legend:{display:false}},cutout:'65%',responsive:true,maintainAspectRatio:false}})}},50);
-}
-function getActivityDotColor(action){const m={created:'#3B82F6',updated:'#F59E0B',deleted:'#EF4444',status_changed:'#8B5CF6',note_added:'#10B981',note_deleted:'#6B7280',assigned:'#EC4899'};return m[action]||'#94A3B8'}
-function buildStatCard(label,value,key,icon,bgColor,iconColor,trend){return'<div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">'+label+'</p><h2 class="stat-card__value">'+value+'</h2><p class="stat-card__trend">'+trend+'</p></div><div class="stat-card__icon-wrap" style="background:'+bgColor+';color:'+iconColor+'">'+icon+'</div></div>'}
-function showActivityModal(){
-  const html='<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">All Activity</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body" style="max-height:60vh;overflow-y:auto">'+activityLogCache.map(a=>'<div class="activity-item"><div class="activity-dot" style="background:'+getActivityDotColor(a.action)+'"></div><div class="activity-content"><p>'+escapeHtml(a.details||'')+'</p><span class="activity-time">'+AppUI.formatTimeAgo(a.timestamp)+'</span></div></div>').join('')+'</div></div></div>';
-  document.getElementById('modal-overlay').innerHTML=html;document.body.classList.add('modal-open');
-  document.querySelector('.modal-close-btn').addEventListener('click',closeModal);
-  document.querySelector('.modal-backdrop').addEventListener('click',e=>{if(e.target.classList.contains('modal-backdrop'))closeModal()});
-  document.addEventListener('keydown',handleEscape);
-}
-function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-
-/* ============================
-   CUSTOMER TABLE
-   ============================ */
-function sortArrow(col){if(sortColumn!==col)return'<span class="sort-arrow"></span>';return sortDir==='asc'?'<span class="sort-arrow">↑</span>':'<span class="sort-arrow">↓</span>'}
-function sortCustomers(col){if(sortColumn===col){sortDir=sortDir==='asc'?'desc':'asc'}else{sortColumn=col;sortDir='asc'}updateCustomerTable()}
-function getFilteredCustomers(){let filtered=customersCache.filter(c=>{const q=currentSearchQuery;const match=!q||c.fullName.toLowerCase().includes(q)||c.phone.includes(q)||(c.email&&c.email.toLowerCase().includes(q));const filter=currentTableConfig.filterFn?currentTableConfig.filterFn(c):true;return match&&filter});filtered.sort((a,b)=>{const av=(a[sortColumn]||'').toString().toLowerCase();const bv=(b[sortColumn]||'').toString().toLowerCase();return sortDir==='asc'?av.localeCompare(bv):bv.localeCompare(av)});return filtered}
-function buildTableRows(filtered){const extraCols=currentTableConfig.extraColumns||[];const extraHeaders=extraCols.map(col=>'<th>'+col.label+'</th>').join('');if(!filtered.length)return'<div class="empty-state"><p>No customers found.</p><button onclick="currentSearchQuery=\'\';updateCustomerTable()">Clear Search</button></div>';return'<div class="table-wrap"><table class="data-table"><thead><tr><th onclick="sortCustomers(\'fullName\')">Name '+sortArrow('fullName')+'</th><th onclick="sortCustomers(\'phone\')">Phone '+sortArrow('phone')+'</th><th onclick="sortCustomers(\'email\')">Email '+sortArrow('email')+'</th><th onclick="sortCustomers(\'source\')">Source '+sortArrow('source')+'</th><th onclick="sortCustomers(\'status\')">Status '+sortArrow('status')+'</th><th onclick="sortCustomers(\'lastContactDate\')">Last Contact '+sortArrow('lastContactDate')+'</th>'+extraHeaders+'<th>Actions</th></tr></thead><tbody>'+filtered.map(c=>'<tr onclick="location.hash=\'#customer/'+c.id+'\'"><td><div class="td-with-avatar">'+AppUI.avatarCircle(c.fullName)+'<span>'+c.fullName+'</span></div></td><td>'+c.phone+'</td><td>'+(c.email||'—')+'</td><td>'+c.source+'</td><td>'+AppUI.statusBadge(c.status)+'</td><td>'+(c.lastContactDate||'—')+'</td>'+extraCols.map(col=>'<td>'+col.render(c)+'</td>').join('')+'<td onclick="event.stopPropagation()"><div class="action-btns"><button class="btn-icon btn-edit" onclick="showCustomerModal(customersCache.find(x=>x.id===\''+c.id+'\'))" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-icon btn-delete" onclick="deleteCustomer(\''+c.id+'\')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td></tr>').join('')+'</tbody></table></div>'}
-function updateCustomerTable(){const filtered=getFilteredCustomers();const countEl=document.querySelector('.page-count');const tableCard=document.querySelector('.table-card');if(countEl)countEl.textContent='('+filtered.length+')';if(tableCard)tableCard.innerHTML=buildTableRows(filtered)}
-async function renderCustomerTable(config){currentTableConfig=config;sortColumn='fullName';sortDir='asc';await refreshCache();const filtered=getFilteredCustomers();document.getElementById('content').innerHTML='<div class="page-header"><div class="page-header-left"><h2>'+config.title+'</h2><span class="page-count">('+filtered.length+')</span></div><div class="page-header-right"><div class="page-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="customer-search" placeholder="Search..." value="'+currentSearchQuery+'"></div><button class="btn-primary btn-sm" onclick="showCustomerModal()" style="width:auto">+ Add Customer</button></div></div><div class="table-card">'+buildTableRows(filtered)+'</div>';const si=document.getElementById('customer-search');if(si)si.addEventListener('input',e=>{currentSearchQuery=e.target.value.toLowerCase();updateCustomerTable()})}
-async function renderAllCustomers(){await renderCustomerTable({filterFn:null,title:'All Customers',extraColumns:[]})}
-async function deleteCustomer(id){if(!confirm('Delete this customer? This cannot be undone.'))return;const uid=AppAuth.getSession()?AppAuth.getSession().id:null;await AppDB.deleteCustomer(id);await AppDB.addAuditLog(uid,'deleted','customer',id,'Customer deleted');await refreshCache();updateCustomerTable();AppUI.showToast('Customer deleted','success')}
-
-/* ============================
-   CUSTOMER DETAIL
-   ============================ */
-async function renderCustomerDetail(id){await refreshCache();const customer=customersCache.find(c=>c.id===id);if(!customer){document.getElementById('content').innerHTML='<div class="empty-state"><h2>Customer not found</h2><button onclick="location.hash=\'#customers-all\'">Back to All Customers</button></div>';return}const statusObj=AppConfig.STATUSES.find(s=>s.key===customer.status);const stsColor=statusObj?statusObj.color:'#6B7280',stsBg=statusObj?statusObj.bg:'#F9FAFB';const statusOpts=AppConfig.STATUSES.map(s=>'<option value="'+s.key+'"'+(customer.status===s.key?' selected':'')+'>'+s.key+'</option>').join('');const notes=await AppDB.getNotes(customer.id);notes.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));const notesHtml=notes.length?notes.map(n=>'<div class="note-item"><p class="note-text">'+escapeHtml(n.text)+'</p><div class="note-meta"><span>'+AppUI.formatTimeAgo(n.createdAt)+'</span><button class="note-delete-btn" onclick="deleteNote(\''+customer.id+'\','+n.id+')">&times;</button></div></div>').join(''):'<p style="text-align:center;color:var(--color-text-muted);padding:32px 0">No notes yet.</p>';const wonExtra=customer.status==='Won Deal'?'<div class="detail-field"><span class="detail-label">Deal Value</span><span class="detail-value"><strong>$'+(customer.dealValue||0)+'</strong></span></div><div class="detail-field"><span class="detail-label">Product</span><span class="detail-value">'+(customer.product||'—')+'</span></div>':'';const lostExtra=customer.status==='Lost Deal'?'<div class="detail-field"><span class="detail-label">Lost Reason</span><span class="detail-value">'+(customer.lostReason||'—')+'</span></div>':'';document.getElementById('content').innerHTML='<div class="detail-back-bar"><button class="btn-back" onclick="history.back()">&larr; Back</button><h2>'+customer.fullName+'</h2></div><div class="detail-columns"><div class="detail-left"><div class="detail-card"><div class="detail-card-header"><h3>Customer Information</h3><button class="btn-primary btn-sm" onclick="showCustomerModal(customersCache.find(c=>c.id===\''+customer.id+'\'))" style="width:auto">Edit Customer</button></div><div class="detail-fields"><div class="detail-field"><span class="detail-label">Full Name</span><span class="detail-value">'+customer.fullName+'</span></div><div class="detail-field"><span class="detail-label">Phone</span><span class="detail-value">'+customer.phone+'</span></div><div class="detail-field"><span class="detail-label">Email</span><span class="detail-value">'+(customer.email||'—')+'</span></div><div class="detail-field"><span class="detail-label">Company</span><span class="detail-value">'+(customer.company||'—')+'</span></div><div class="detail-field"><span class="detail-label">Source</span><span class="detail-value">'+customer.source+'</span></div><div class="detail-field"><span class="detail-label">Status</span><span class="detail-value">'+AppUI.statusBadge(customer.status)+'</span></div><div class="detail-field"><span class="detail-label">Change Status</span><span class="detail-value"><select class="form-select" onchange="changeStatus(\''+customer.id+'\',this.value)">'+statusOpts+'</select></span></div><div class="detail-field"><span class="detail-label">Last Contact</span><span class="detail-value">'+(customer.lastContactDate||'—')+'</span></div><div class="detail-field"><span class="detail-label">Next Follow Up</span><span class="detail-value">'+(customer.nextFollowUpDate||'—')+'</span></div>'+wonExtra+lostExtra+'</div></div></div><div class="detail-right"><div class="detail-card"><h3 style="margin-bottom:16px">Notes</h3><div class="note-add"><textarea id="note-input" placeholder="Add a note..." rows="3"></textarea><button class="btn-primary btn-sm" onclick="addNote(\''+customer.id+'\')" style="width:auto">Add Note</button></div><div class="notes-list">'+notesHtml+'</div></div></div></div>'}
-async function changeStatus(customerId,newStatus){const customer=customersCache.find(c=>c.id===customerId);if(!customer)return;const oldStatus=customer.status;customer.status=newStatus;customer.updatedAt=new Date().toISOString();await AppDB.saveCustomer(customer);const uid=AppAuth.getSession()?AppAuth.getSession().id:null;await AppDB.addAuditLog(uid,'status_changed','customer',customerId,'Status changed from '+oldStatus+' to '+newStatus);await refreshCache();renderCustomerDetail(customerId);AppUI.showToast('Status updated','success')}
-async function addNote(customerId){const text=document.getElementById('note-input').value.trim();if(!text)return;const uid=AppAuth.getSession()?AppAuth.getSession().id:null;await AppDB.saveNote({customerId,userId:uid,text});await AppDB.addAuditLog(uid,'note_added','customer',customerId,'Note added');await refreshCache();renderCustomerDetail(customerId);AppUI.showToast('Note added','success')}
-async function deleteNote(customerId,noteId){await AppDB.deleteNote(noteId);const uid=AppAuth.getSession()?AppAuth.getSession().id:null;await AppDB.addAuditLog(uid,'note_deleted','customer',customerId,'Note deleted');renderCustomerDetail(customerId)}
-
-/* ============================
-   NOTES, SETTINGS, TASKS
-   ============================ */
-let notesSearchQuery = '';
-function getFilteredNotes(){return customersCache.reduce((arr,c)=>{if(c.notes)c.notes.forEach(n=>arr.push({...n,customerName:c.fullName,customerId:c.id}));return arr},[]).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).filter(n=>n.customerName.toLowerCase().includes(notesSearchQuery)||n.text.toLowerCase().includes(notesSearchQuery))}
-function buildNotesFeedHtml(f){if(!f.length)return'<div class="empty-state"><p>No notes found.</p></div>';return f.map(n=>'<div class="note-feed-item">'+AppUI.avatarCircle(n.customerName)+'<div class="note-feed-body"><p class="note-feed-customer"><a href="#" onclick="event.preventDefault();location.hash=\'#customer/'+n.customerId+'\'">'+n.customerName+'</a></p><p class="note-feed-text">'+escapeHtml(n.text)+'</p><p class="note-feed-date">'+AppUI.formatTimeAgo(n.createdAt)+'</p></div></div>').join('')}
-function updateNotesFeed(){const f=getFilteredNotes();const c=document.querySelector('.page-count');const fe=document.querySelector('.notes-feed');if(c)c.textContent='('+f.length+')';if(fe)fe.innerHTML=buildNotesFeedHtml(f)}
-async function renderNotes(){notesSearchQuery='';await refreshCache();const f=getFilteredNotes();document.getElementById('content').innerHTML='<div class="page-header"><div class="page-header-left"><h2>Notes & Questions</h2><span class="page-count">('+f.length+')</span></div><div class="page-header-right"><div class="page-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="notes-search" placeholder="Search notes..."></div></div></div><div class="notes-feed">'+buildNotesFeedHtml(f)+'</div>';const si=document.getElementById('notes-search');if(si)si.addEventListener('input',e=>{notesSearchQuery=e.target.value.toLowerCase();updateNotesFeed()})}
-async function renderSettings(){const theme=(await AppDB.getSetting('theme')||{}).value||'light';document.getElementById('content').innerHTML='<div class="page-header"><h2>Settings</h2></div><div style="margin-bottom:32px"><h3 style="margin-bottom:6px">Appearance</h3><p style="color:var(--color-text-secondary);font-size:var(--font-sm);margin-bottom:20px">Choose your preferred theme.</p><div style="display:flex;gap:20px">'+['light','dark'].map(t=>'<div class="theme-card'+(theme===t?' theme-card--active':'')+'" onclick="setTheme(\''+t+'\')" style="border:2px solid '+(theme===t?'var(--color-accent)':'var(--color-border)')+';border-radius:12px;padding:16px;width:180px;cursor:pointer;text-align:center"><div style="height:80px;border-radius:8px;margin-bottom:12px;background:'+(t==='dark'?'#0F172A':'#F8FAFC')+';border:1px solid '+(t==='dark'?'#334155':'#E2E8F0')+';display:flex"><div style="width:30%;background:'+(t==='dark'?'#020617':'#0F172A')+';border-radius:6px 0 0 6px"></div><div style="flex:1;padding:6px"><div style="height:6px;background:'+(t==='dark'?'#1E293B':'#FFF')+';border-radius:3px;margin-bottom:4px;border:1px solid '+(t==='dark'?'#334155':'#E2E8F0')+'"></div><div style="flex:1;background:'+(t==='dark'?'#1E293B':'#FFF')+';border-radius:3px;border:1px solid '+(t==='dark'?'#334155':'#E2E8F0')+'"></div></div></div><span style="font-size:var(--font-sm);font-weight:600">'+t.charAt(0).toUpperCase()+t.slice(1)+' Mode</span></div>').join('')+'</div></div>'}
-async function setTheme(t){await AppDB.saveSetting('theme',t);document.body.classList.toggle('dark-mode',t==='dark');renderSettings()}
-function applyTheme(){AppDB.getSetting('theme').then(s=>{if(s)document.body.classList.toggle('dark-mode',s.value==='dark')})}
-async function renderTasks(){await refreshCache();const tasks=await AppDB.getTasks();document.getElementById('content').innerHTML='<div class="page-header"><h2>Tasks</h2><button class="btn-primary btn-sm" onclick="showTaskModal()" style="width:auto">+ Add Task</button></div><div class="table-card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Title</th><th>Customer</th><th>Status</th><th>Priority</th><th>Due Date</th><th>Actions</th></tr></thead><tbody>'+(tasks.length?tasks.map(t=>{const c=customersCache.find(x=>x.id===t.customerId);const ps=AppConfig.TASK_PRIORITIES.find(p=>p.key===t.priority);return'<tr><td><strong>'+t.title+'</strong></td><td>'+(c?c.fullName:'—')+'</td><td>'+t.status+'</td><td><span style="color:'+(ps?ps.color:'#6B7280')+';font-weight:600">'+t.priority+'</span></td><td>'+(t.dueDate||'—')+'</td><td><div class="action-btns"><button class="btn-icon btn-edit" onclick="showTaskModal('+t.id+')" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-icon btn-delete" onclick="deleteTask('+t.id+')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td></tr>'}).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--color-text-muted);padding:32px">No tasks yet.</td></tr>')+'</tbody></table></div></div>'}
-let currentEditTask=null;
-function showTaskModal(task=null){currentEditTask=task;const isEdit=task!==null;const custOpts=customersCache.map(c=>'<option value="'+c.id+'"'+(isEdit&&task.customerId===c.id?' selected':'')+'>'+c.fullName+'</option>').join('');const stsOpts=AppConfig.TASK_STATUSES.map(s=>'<option value="'+s+'"'+(isEdit&&task.status===s?' selected':'')+'>'+s+'</option>').join('');const priOpts=AppConfig.TASK_PRIORITIES.map(p=>'<option value="'+p.key+'"'+(isEdit&&task.priority===p.key?' selected':'')+'>'+p.label+'</option>').join('');const html='<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">'+(isEdit?'Edit Task':'Add Task')+'</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Title *</label><input type="text" id="task-title" class="form-input" placeholder="Task title" value="'+(isEdit?task.title:'')+'"></div><div class="form-group"><label class="form-label">Description</label><textarea id="task-desc" class="form-textarea" rows="2" placeholder="Task details">'+(isEdit?task.description||'':'')+'</textarea></div><div class="form-row"><div class="form-group"><label class="form-label">Customer</label><select id="task-customer" class="form-select"><option value="">None</option>'+custOpts+'</select></div><div class="form-group"><label class="form-label">Status</label><select id="task-status" class="form-select">'+stsOpts+'</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Priority</label><select id="task-priority" class="form-select">'+priOpts+'</select></div><div class="form-group"><label class="form-label">Due Date</label><input type="date" id="task-due" class="form-input" value="'+(isEdit?task.dueDate||'':'')+'"></div></div></div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">'+(isEdit?'Update':'Create')+'</button></div></div></div>';document.getElementById('modal-overlay').innerHTML=html;document.body.classList.add('modal-open');document.querySelector('.modal-close-btn').addEventListener('click',closeModal);document.querySelector('.modal-cancel').addEventListener('click',closeModal);document.querySelector('.modal-backdrop').addEventListener('click',e=>{if(e.target.classList.contains('modal-backdrop'))closeModal()});document.addEventListener('keydown',handleEscape);document.querySelector('.modal-submit').addEventListener('click',()=>handleTaskSubmit())}
-async function handleTaskSubmit(){const title=document.getElementById('task-title').value.trim();if(!title){AppUI.showToast('Title is required','error');return}const data={title,description:document.getElementById('task-desc').value.trim(),customerId:document.getElementById('task-customer').value||null,status:document.getElementById('task-status').value,priority:document.getElementById('task-priority').value,dueDate:document.getElementById('task-due').value||null};if(currentEditTask){await AppDB.saveTask({...currentEditTask,...data,updatedAt:new Date().toISOString()});AppUI.showToast('Task updated','success')}else{await AppDB.saveTask({...data,assignedTo:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});AppUI.showToast('Task created','success')}closeModal();renderTasks()}
-async function deleteTask(id){if(!confirm('Delete this task?'))return;await AppDB.deleteTask(id);renderTasks();AppUI.showToast('Task deleted','success')}
-
-/* ============================
-function showLogin(msg) {
-  document.getElementById('app').style.display = 'none';
-  const old = document.querySelector('.login-screen');
-  if(old) old.remove();
-
-  const div = document.createElement('div');
-  div.className = 'login-screen';
-  div.innerHTML = `<div class="login-card">
-    <div class="login-logo">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="3" height="9" rx="1"/><rect x="10" y="7" width="3" height="14" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/></svg>
-      <span>SalesHub</span>
-    </div>
-    <h1>Welcome back</h1>
-    <p class="login-subtitle">Sign in to your account</p>
-    <div class="login-error ${msg?'visible':''}" id="login-error">${msg||''}</div>
-    <div class="form-group">
-      <label class="form-label">Email</label>
-      <input type="email" class="form-input" id="login-email" placeholder="admin@saleshub.com" autocomplete="username">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <input type="password" class="form-input" id="login-password" placeholder="Enter password" autocomplete="current-password">
-    </div>
-    <div class="form-error" id="login-field-error"></div>
-    <button class="btn-primary" id="login-btn">Sign In</button>
-  </div>`;
-  document.body.appendChild(div);
-
-  const emailEl = document.getElementById('login-email');
-  const passEl = document.getElementById('login-password');
-  const btn = document.getElementById('login-btn');
-  const fe = document.getElementById('login-field-error');
-  const le = document.getElementById('login-error');
-
-  function showErr(m){fe.textContent=m;fe.classList.add('visible')}
-  function clearErr(){fe.textContent='';fe.classList.remove('visible')}
-  function loading(v){btn.textContent=v?'Signing in...':'Sign In';btn.disabled=v}
-
-  async function handleLogin(){
-    clearErr();if(le){le.textContent='';le.classList.remove('visible')}
-    const e=emailEl.value.trim(),p=passEl.value;
-    if(!e){showErr('Email is required');return}
-    if(!p){showErr('Password is required');return}
-    loading(true);
-    try{await AppAuth.login(e,p);loading(false);initApp()}
-    catch(err){loading(false);showErr(err.message)}
-  }
-  btn.addEventListener('click',handleLogin);
-  passEl.addEventListener('keydown',ev=>{if(ev.key==='Enter')handleLogin()});
-  emailEl.addEventListener('keydown',ev=>{if(ev.key==='Enter')passEl.focus()});
-}
-
-function initApp() {
-  const loginScreen = document.querySelector('.login-screen');
-  if(loginScreen) loginScreen.remove();
-  document.getElementById('app').style.display = 'flex';
+function initApp(){
   renderSidebar();
   renderTopbar();
   applyTheme();
   router();
 }
 
-/* ============================
-   SIDEBAR + TOPBAR
-   ============================ */
+// ========== SIDEBAR ==========
 function updateSidebarActive(hash){
-  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('nav-item--active'));
-  const active = document.querySelector('.nav-item[data-route="'+hash+'"]');
+  document.querySelectorAll('.nav-item').forEach(function(i){ i.classList.remove('nav-item--active'); });
+  var active = document.querySelector('.nav-item[data-route="'+hash+'"]');
   if(active) active.classList.add('nav-item--active');
-  document.querySelectorAll('.nav-child').forEach(i=>{const p=i.closest('.nav-parent');if(p&&p.querySelector('.nav-child.nav-item--active'))i.parentElement.classList.add('submenu--open')});
 }
 
 function toggleSidebar(){
-  const app=document.getElementById('app');
+  var app = document.getElementById('app');
   app.classList.toggle('sidebar-collapsed');
-  if(app.classList.contains('sidebar-collapsed'))document.querySelectorAll('.submenu').forEach(s=>s.classList.remove('submenu--open'));
+  if(app.classList.contains('sidebar-collapsed')) document.querySelectorAll('.submenu').forEach(function(s){ s.classList.remove('submenu--open'); });
 }
 
 function renderSidebar(){
-  document.getElementById('sidebar').innerHTML=`
-    <div class="sidebar-logo">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><rect x="3" y="12" width="3" height="9" rx="1"/><rect x="10" y="7" width="3" height="14" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/></svg>
-      <span class="sidebar-logo-text">Sales<span class="sidebar-logo-highlight" style="color:var(--color-accent)">Hub</span></span>
-    </div>
-    <ul class="sidebar-nav">
-      <li class="nav-item" data-route="#dashboard">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        <span>Dashboard</span>
-      </li>
-      <li class="nav-section-label">CUSTOMERS</li>
-      <li class="nav-parent">
-        <div class="nav-item nav-parent-trigger" data-submenu="customers">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>Customers</span>
-          <svg class="nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <ul class="submenu submenu--open">
-          <li class="nav-item nav-child" data-route="#customers-all"><span>All Customers</span></li>
-          <li class="nav-item nav-child" data-route="#customers-new-leads"><span>New Leads</span></li>
-          <li class="nav-item nav-child" data-route="#customers-interested"><span>Interested</span></li>
-          <li class="nav-item nav-child" data-route="#customers-hot-leads"><span>Hot Leads</span></li>
-          <li class="nav-item nav-child" data-route="#customers-follow-ups"><span>Follow Ups</span></li>
-        </ul>
-      </li>
-      <li class="nav-section-label">DEALS</li>
-      <li class="nav-parent">
-        <div class="nav-item nav-parent-trigger" data-submenu="deals">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          <span>Deals</span>
-          <svg class="nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <ul class="submenu submenu--open">
-          <li class="nav-item nav-child" data-route="#deals-won"><span>Won Deals</span></li>
-          <li class="nav-item nav-child" data-route="#deals-lost"><span>Lost Deals</span></li>
-        </ul>
-      </li>
-      <li class="sidebar-divider"></li>
-      <li class="nav-item" data-route="#tasks">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        <span>Tasks</span>
-      </li>
-      <li class="nav-item" data-route="#notes">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <span>Notes</span>
-      </li>
-      <li class="nav-item" data-route="#settings">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Settings</span>
-      </li>
-    </ul>
-    <div class="sidebar-collapse-btn" onclick="toggleSidebar()">
-      <svg class="collapse-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    </div>
-  `;
-  const sidebar=document.getElementById('sidebar');
-  sidebar.querySelectorAll('.nav-item[data-route]').forEach(item=>{
-    item.addEventListener('click',()=>{currentSearchQuery='';notesSearchQuery='';window.location.hash=item.getAttribute('data-route')})
+  document.getElementById('sidebar').innerHTML = '<div class="sidebar-logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><rect x="3" y="12" width="3" height="9" rx="1"/><rect x="10" y="7" width="3" height="14" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/></svg><span class="sidebar-logo-text">Sales<span style="color:var(--color-accent)">Hub</span></span></div><ul class="sidebar-nav"><li class="nav-item" data-route="#dashboard"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Dashboard</span></li><li class="nav-section-label">CUSTOMERS</li><li class="nav-parent"><div class="nav-item nav-parent-trigger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Customers</span><svg class="nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><ul class="submenu submenu--open"><li class="nav-item nav-child" data-route="#customers-all"><span>All Customers</span></li><li class="nav-item nav-child" data-route="#customers-new-leads"><span>New Leads</span></li><li class="nav-item nav-child" data-route="#customers-interested"><span>Interested</span></li><li class="nav-item nav-child" data-route="#customers-hot-leads"><span>Hot Leads</span></li><li class="nav-item nav-child" data-route="#customers-follow-ups"><span>Follow Ups</span></li></ul></li><li class="nav-section-label">DEALS</li><li class="nav-parent"><div class="nav-item nav-parent-trigger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Deals</span><svg class="nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><ul class="submenu submenu--open"><li class="nav-item nav-child" data-route="#deals-won"><span>Won Deals</span></li><li class="nav-item nav-child" data-route="#deals-lost"><span>Lost Deals</span></li></ul></li><li class="sidebar-divider"></li><li class="nav-item" data-route="#tasks"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Tasks</span></li><li class="nav-item" data-route="#notes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Notes</span></li><li class="nav-item" data-route="#settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></li></ul><div class="sidebar-collapse-btn" onclick="toggleSidebar()"><svg class="collapse-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></div>';
+
+  var sidebar = document.getElementById('sidebar');
+  sidebar.querySelectorAll('.nav-item[data-route]').forEach(function(item){
+    item.addEventListener('click', function(){
+      currentSearchQuery = ''; notesSearchQuery = '';
+      window.location.hash = item.getAttribute('data-route');
+    });
   });
-  sidebar.querySelectorAll('.nav-parent-trigger').forEach(trigger=>{
-    trigger.addEventListener('click',()=>{const app=document.getElementById('app');const submenu=trigger.closest('.nav-parent').querySelector('.submenu');if(app.classList.contains('sidebar-collapsed'))app.classList.remove('sidebar-collapsed');submenu.classList.toggle('submenu--open')})
+  sidebar.querySelectorAll('.nav-parent-trigger').forEach(function(trigger){
+    trigger.addEventListener('click', function(){
+      var app = document.getElementById('app');
+      var submenu = trigger.closest('.nav-parent').querySelector('.submenu');
+      if(app.classList.contains('sidebar-collapsed')) app.classList.remove('sidebar-collapsed');
+      submenu.classList.toggle('submenu--open');
+    });
   });
 }
 
+// ========== TOPBAR ==========
 function renderTopbar(){
-  const s=AppAuth.getSession();
-  document.getElementById('topbar').innerHTML=`
-    <button class="hamburger-btn" onclick="toggleMobileSidebar()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-    <h1 id="page-title" class="topbar-title">Dashboard</h1>
-    <div class="topbar-right">
-      <div class="topbar-search">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="global-search" placeholder="Search customers...">
-      </div>
-      <div class="user-avatar" onclick="AppAuth.logout()" title="Sign out">${s.avatar}</div>
-    </div>
-  `;
-  const gs=document.getElementById('global-search');
-  if(gs)gs.addEventListener('input',e=>{const q=e.target.value.trim();if(q.length>0){currentSearchQuery=q.toLowerCase();if(location.hash!=='#customers-all')location.hash='#customers-all';else updateCustomerTable()}else{currentSearchQuery='';if(location.hash==='#customers-all')updateCustomerTable()}});
+  var s = AppAuth.getSession();
+  document.getElementById('topbar').innerHTML = '<button class="hamburger-btn" onclick="var sb=document.getElementById(\'sidebar\');sb.classList.toggle(\'sidebar--open\')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><h1 id="page-title" class="topbar-title">Dashboard</h1><div class="topbar-right"><div class="topbar-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="global-search" placeholder="Search customers..."></div><div class="user-avatar" onclick="AppAuth.logout()" title="Sign out">'+s.avatar+'</div></div>';
+  var gs = document.getElementById('global-search');
+  if(gs) gs.addEventListener('input', function(e){
+    var q = e.target.value.trim();
+    if(q.length>0){ currentSearchQuery = q.toLowerCase(); if(location.hash!=='#customers-all') location.hash='#customers-all'; else updateCustomerTable(); }
+    else { currentSearchQuery=''; if(location.hash==='#customers-all') updateCustomerTable(); }
+  });
 }
 
-function toggleMobileSidebar(){document.getElementById('sidebar').classList.toggle('sidebar--open')}
-
-/* ============================
-   BOOTSTRAP
-   ============================ */
-AppDB.init().then(async () => {
-  await AppDB.seedAll();
-  if(!AppAuth.isAuth()) { showLogin(); return; }
+// ========== BOOTSTRAP ==========
+AppDB.init().then(function(){
+  document.getElementById('content').innerHTML = '<p style="text-align:center;padding:40px;color:var(--color-text-muted)">Preparing data...</p>';
+  return AppDB.seedAll();
+}).then(function(){
+  if(!AppAuth.isAuth()){ showLogin(); return; }
   initApp();
-}).catch(err => console.error("Init failed:", err));
+}).catch(function(err){
+  console.error('Init error:', err.message, err.stack);
+  if(!AppAuth.isAuth()) showLogin('Error: '+err.message);
+});
 </script>
 </body>
 </html>
