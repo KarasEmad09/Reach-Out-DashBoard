@@ -384,11 +384,17 @@ var customersCache = [];
 var activityLogCache = [];
 var notesSearchQuery = '';
 var currentEditCustomer = null;
+var userCache = [];
+var tasksCache = [];
 
 function refreshCache(){
   return AppDB.getCustomers().then(function(c){ customersCache = c; })
     .then(function(){ return AppDB.getAuditLogs(); })
-    .then(function(a){ activityLogCache = a; activityLogCache.sort(function(x,y){return new Date(y.timestamp)-new Date(x.timestamp)}); });
+    .then(function(a){ activityLogCache = a; activityLogCache.sort(function(x,y){return new Date(y.timestamp)-new Date(x.timestamp)}); })
+    .then(function(){ return AppDB.getAll('users'); })
+    .then(function(u){ userCache = u; })
+    .then(function(){ return AppDB.getTasks(); })
+    .then(function(t){ tasksCache = t; });
 }
 
 // ========== ROUTER ==========
@@ -705,9 +711,74 @@ function setTheme(t){
 function applyTheme(){ AppDB.getSetting('theme').then(function(s){ if(s) document.body.classList.toggle('dark-mode', s.value==='dark'); }); }
 
 // ========== TASKS ==========
+var taskSearchQuery = '';
+var taskStatusFilter = 'all';
+var taskPriorityFilter = 'all';
+
 function renderTasks(){
-  return refreshCache().then(function(){ return AppDB.getTasks(); }).then(function(tasks){
-    document.getElementById('content').innerHTML = '<div class="page-header"><h2>Tasks</h2><button class="btn-primary btn-sm" onclick="showTaskModal()" style="width:auto">+ Add Task</button></div><div class="table-card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Title</th><th>Customer</th><th>Status</th><th>Priority</th><th>Due Date</th><th>Actions</th></tr></thead><tbody>'+(tasks.length?tasks.map(function(t){ var c=customersCache.find(function(x){return x.id===t.customerId}); var ps=AppConfig.TASK_PRIORITIES.find(function(p){return p.key===t.priority}); return '<tr><td><strong>'+t.title+'</strong></td><td>'+(c?c.fullName:'—')+'</td><td>'+t.status+'</td><td><span style="color:'+(ps?ps.color:'#6B7280')+';font-weight:600">'+t.priority+'</span></td><td>'+(t.dueDate||'—')+'</td><td><div class="action-btns"><button class="btn-icon btn-edit" onclick="showTaskModal('+t.id+')" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-icon btn-delete" onclick="deleteTask('+t.id+')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td></tr>'; }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--color-text-muted);padding:32px">No tasks yet.</td></tr>')+'</tbody></table></div></div>';
+  return refreshCache().then(function(){
+    var tasks = tasksCache;
+    // Apply filters
+    var filtered = tasks.filter(function(t){
+      if(taskSearchQuery && t.title.toLowerCase().indexOf(taskSearchQuery)===-1 && (t.description||'').toLowerCase().indexOf(taskSearchQuery)===-1) return false;
+      if(taskStatusFilter!=='all' && t.status!==taskStatusFilter) return false;
+      if(taskPriorityFilter!=='all' && t.priority!==taskPriorityFilter) return false;
+      return true;
+    });
+    // Mark overdue
+    var today = new Date().toISOString().split('T')[0];
+    filtered.forEach(function(t){ if(t.dueDate && t.dueDate < today && t.status!=='done') t.isOverdue = true; else t.isOverdue = false; });
+
+    var stsOpts = AppConfig.TASK_STATUSES.map(function(s){ return '<option value="'+s+'"'+(taskStatusFilter===s?' selected':'')+'>'+s+'</option>'; }).join('');
+    var priOpts = AppConfig.TASK_PRIORITIES.map(function(p){ return '<option value="'+p.key+'"'+(taskPriorityFilter===p.key?' selected':'')+'>'+p.label+'</option>'; }).join('');
+
+    var rowsHTML = filtered.length ? filtered.map(function(t){
+      var c = customersCache.find(function(x){return x.id===t.customerId});
+      var ps = AppConfig.TASK_PRIORITIES.find(function(p){return p.key===t.priority});
+      var assigneeName = t.assigneeName || '—';
+      var overdueStyle = t.isOverdue ? ' style="background:#FEF2F2"' : '';
+      var statusStyle = t.status==='overdue'||t.isOverdue ? ' style="color:#EF4444;font-weight:600"' : '';
+      var dueClass = t.isOverdue ? ' style="color:#EF4444;font-weight:600"' : '';
+      return '<tr'+overdueStyle+' onclick="showTaskDetail('+t.id+')"><td><strong>'+t.title+'</strong></td><td>'+(c?c.fullName:'—')+'</td><td>'+assigneeName+'</td><td'+statusStyle+'>'+(t.isOverdue?'Overdue':t.status)+'</td><td><span style="color:'+(ps?ps.color:'#6B7280')+';font-weight:600">'+t.priority+'</span></td><td'+dueClass+'>'+(t.dueDate||'—')+'</td><td><div class="action-btns"><button class="btn-icon btn-edit" onclick="event.stopPropagation();showTaskModal(findTaskById('+t.id+'))" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-icon btn-delete" onclick="event.stopPropagation();deleteTask('+t.id+')" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td></tr>';
+    }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--color-text-muted);padding:32px">No tasks found.</td></tr>';
+
+    document.getElementById('content').innerHTML =
+      '<div class="page-header"><h2>Tasks</h2><button class="btn-primary btn-sm" onclick="showTaskModal()" style="width:auto">+ Add Task</button></div>'+
+      '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">'+
+        '<div class="page-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="task-search" placeholder="Search tasks..." value="'+taskSearchQuery+'"></div>'+
+        '<select id="task-filter-status" class="form-select" style="width:auto"><option value="all">All Status</option>'+stsOpts+'</select>'+
+        '<select id="task-filter-priority" class="form-select" style="width:auto"><option value="all">All Priority</option>'+priOpts+'</select>'+
+      '</div>'+
+      '<div class="table-card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Title</th><th>Customer</th><th>Assigned To</th><th>Status</th><th>Priority</th><th>Due Date</th><th>Actions</th></tr></thead><tbody>'+rowsHTML+'</tbody></table></div></div>';
+
+    document.getElementById('task-search').addEventListener('input', function(e){ taskSearchQuery=e.target.value.toLowerCase(); renderTasks(); });
+    document.getElementById('task-filter-status').addEventListener('change', function(e){ taskStatusFilter=e.target.value; renderTasks(); });
+    document.getElementById('task-filter-priority').addEventListener('change', function(e){ taskPriorityFilter=e.target.value; renderTasks(); });
+  });
+}
+
+function findTaskById(id){ return tasksCache.find(function(t){return t.id===id}); }
+
+function showTaskDetail(taskId){
+  var task = tasksCache.find(function(t){return t.id===taskId});
+  if(!task) return;
+  var c = customersCache.find(function(x){return x.id===task.customerId});
+  var ps = AppConfig.TASK_PRIORITIES.find(function(p){return p.key===task.priority});
+  AppDB.getAuditLogs().then(function(logs){
+    var taskLogs = logs.filter(function(l){return l.entityType==='task'&&l.entityId===String(taskId)});
+    var logHTML = taskLogs.length ? taskLogs.map(function(l){ return '<div class="activity-item"><div class="activity-dot" style="background:'+getDotColor(l.action)+'"></div><div class="activity-content"><p>'+escHtml(l.details||'')+'</p><span class="activity-time">'+AppUI.formatTimeAgo(l.timestamp)+'</span></div></div>'; }).join('') : '<p style="color:var(--color-text-muted);text-align:center;padding:16px">No history yet.</p>';
+    document.getElementById('content').innerHTML =
+      '<div class="detail-back-bar"><button class="btn-back" onclick="renderTasks()">&larr; Back to Tasks</button><h2>'+task.title+'</h2></div>'+
+      '<div class="detail-columns"><div class="detail-left"><div class="detail-card"><div class="detail-card-header"><h3>Task Details</h3><button class="btn-primary btn-sm" onclick="showTaskModal(findTaskById('+task.id+'))" style="width:auto">Edit Task</button></div><div class="detail-fields">'+
+        '<div class="detail-field"><span class="detail-label">Title</span><span class="detail-value"><strong>'+task.title+'</strong></span></div>'+
+        '<div class="detail-field"><span class="detail-label">Description</span><span class="detail-value">'+(task.description||'—')+'</span></div>'+
+        '<div class="detail-field"><span class="detail-label">Customer</span><span class="detail-value">'+(c?c.fullName:'—')+'</span></div>'+
+        '<div class="detail-field"><span class="detail-label">Assigned To</span><span class="detail-value">'+(task.assigneeName||'Unassigned')+'</span></div>'+
+        '<div class="detail-field"><span class="detail-label">Status</span><span class="detail-value">'+task.status+'</span></div>'+
+        '<div class="detail-field"><span class="detail-label">Priority</span><span class="detail-value"><span style="color:'+(ps?ps.color:'#6B7280')+';font-weight:600">'+task.priority+'</span></span></div>'+
+        '<div class="detail-field"><span class="detail-label">Due Date</span><span class="detail-value">'+(task.dueDate||'—')+'</span></div>'+
+        '<div class="detail-field"><span class="detail-label">Created</span><span class="detail-value">'+AppUI.formatTimeAgo(task.createdAt)+'</span></div>'+
+      '</div></div></div><div class="detail-right"><div class="detail-card"><h3 style="margin-bottom:16px">Task History</h3><div class="activity-list">'+logHTML+'</div></div></div></div>';
   });
 }
 var currentEditTask = null;
@@ -717,7 +788,11 @@ function showTaskModal(task){
   var custOpts = customersCache.map(function(c){ return '<option value="'+c.id+'"'+(isEdit&&task.customerId===c.id?' selected':'')+'>'+c.fullName+'</option>'; }).join('');
   var stsOpts = AppConfig.TASK_STATUSES.map(function(s){ return '<option value="'+s+'"'+(isEdit&&task.status===s?' selected':'')+'>'+s+'</option>'; }).join('');
   var priOpts = AppConfig.TASK_PRIORITIES.map(function(p){ return '<option value="'+p.key+'"'+(isEdit&&task.priority===p.key?' selected':'')+'>'+p.label+'</option>'; }).join('');
-  var html = '<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">'+(isEdit?'Edit Task':'Add Task')+'</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Title *</label><input type="text" id="task-title" class="form-input" placeholder="Task title" value="'+(isEdit?task.title:'')+'"></div><div class="form-group"><label class="form-label">Description</label><textarea id="task-desc" class="form-textarea" rows="2" placeholder="Task details">'+(isEdit?task.description||'':'')+'</textarea></div><div class="form-row"><div class="form-group"><label class="form-label">Customer</label><select id="task-customer" class="form-select"><option value="">None</option>'+custOpts+'</select></div><div class="form-group"><label class="form-label">Status</label><select id="task-status" class="form-select">'+stsOpts+'</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Priority</label><select id="task-priority" class="form-select">'+priOpts+'</select></div><div class="form-group"><label class="form-label">Due Date</label><input type="date" id="task-due" class="form-input" value="'+(isEdit?task.dueDate||'':'')+'"></div></div></div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">'+(isEdit?'Update':'Create')+'</button></div></div></div>';
+  // User assignment
+  var usersOpts = '<option value="">Unassigned</option>';
+  if(typeof userCache !== 'undefined') usersOpts += userCache.map(function(u){ return '<option value="'+u.id+'"'+(isEdit&&task.assignedTo===u.id?' selected':'')+'>'+u.name+' ('+u.role+')</option>'; }).join('');
+
+  var html = '<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">'+(isEdit?'Edit Task':'Add Task')+'</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Title *</label><input type="text" id="task-title" class="form-input" placeholder="Task title" value="'+(isEdit?task.title:'')+'"></div><div class="form-group"><label class="form-label">Description</label><textarea id="task-desc" class="form-textarea" rows="2" placeholder="Task details">'+(isEdit?task.description||'':'')+'</textarea></div><div class="form-row"><div class="form-group"><label class="form-label">Customer</label><select id="task-customer" class="form-select"><option value="">None</option>'+custOpts+'</select></div><div class="form-group"><label class="form-label">Assigned To</label><select id="task-assigned" class="form-select">'+usersOpts+'</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Status</label><select id="task-status" class="form-select">'+stsOpts+'</select></div><div class="form-group"><label class="form-label">Priority</label><select id="task-priority" class="form-select">'+priOpts+'</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Due Date</label><input type="date" id="task-due" class="form-input" value="'+(isEdit?task.dueDate||'':'')+'"></div></div></div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">'+(isEdit?'Update':'Create')+'</button></div></div></div>';
   document.getElementById('modal-overlay').innerHTML = html;
   document.body.classList.add('modal-open');
   document.querySelector('.modal-close-btn').addEventListener('click', closeModal);
@@ -730,19 +805,33 @@ function showTaskModal(task){
 function handleTaskSubmit(){
   var title = document.getElementById('task-title').value.trim();
   if(!title){ AppUI.showToast('Title is required','error'); return; }
+  var assignedTo = document.getElementById('task-assigned').value || null;
+  var assigneeName = '';
+  if(assignedTo && typeof userCache !== 'undefined'){
+    var u = userCache.find(function(x){return String(x.id)===String(assignedTo)});
+    if(u) assigneeName = u.name;
+  }
   var data = {
     title:title, description:document.getElementById('task-desc').value.trim(),
     customerId:document.getElementById('task-customer').value||null,
+    assignedTo:assignedTo?parseInt(assignedTo):null,
+    assigneeName:assigneeName,
     status:document.getElementById('task-status').value,
     priority:document.getElementById('task-priority').value,
     dueDate:document.getElementById('task-due').value||null
   };
+  var uid = AppAuth.getSession()?AppAuth.getSession().id:null;
   var p;
   if(currentEditTask){
-    p = AppDB.saveTask(Object.assign({}, currentEditTask, data, {updatedAt:new Date().toISOString()}));
+    var oldStatus = currentEditTask.status;
+    var updated = Object.assign({}, currentEditTask, data, {updatedAt:new Date().toISOString()});
+    p = AppDB.saveTask(updated);
+    if(oldStatus !== data.status) p = p.then(function(){ return AppDB.addAuditLog(uid,'status_changed','task',String(currentEditTask.id),'Task status: '+oldStatus+' → '+data.status); });
+    if(currentEditTask.assignedTo !== data.assignedTo) p = p.then(function(){ return AppDB.addAuditLog(uid,'assigned','task',String(currentEditTask.id),'Task reassigned'); });
     p.then(function(){ AppUI.showToast('Task updated','success'); });
   } else {
-    p = AppDB.saveTask(Object.assign({}, data, {assignedTo:null,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}));
+    var created = Object.assign({}, data, {createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+    p = AppDB.saveTask(created);
     p.then(function(){ AppUI.showToast('Task created','success'); });
   }
   p.then(function(){ closeModal(); renderTasks(); });
