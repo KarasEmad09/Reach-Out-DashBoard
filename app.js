@@ -8,6 +8,36 @@ let currentSearchQuery = "";
 let sortColumn = "fullName";
 let sortDir = "asc";
 let currentTableConfig = { filterFn: null, title: "All Customers", extraColumns: [] };
+let sessionUser = null;
+let tasks = [];
+let taskSearchQuery = "";
+let taskStatusFilter = "all";
+let taskPriorityFilter = "all";
+
+/* === AUTH === */
+const DEMO_USERS = [
+  { email: "admin@saleshub.com", password: "admin123", name: "Super Admin", role: "super_admin", avatar: "SA" }
+];
+
+function getSession() {
+  const raw = sessionStorage.getItem("sh_sess");
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+function isAuth() { return getSession() !== null; }
+function loginUser(email, pw) {
+  const u = DEMO_USERS.find(x => x.email === email);
+  if (!u || u.password !== pw) throw new Error("Invalid email or password");
+  const s = { name: u.name, email: u.email, role: u.role, avatar: u.avatar };
+  sessionStorage.setItem("sh_sess", JSON.stringify(s));
+  sessionUser = s;
+  return s;
+}
+function logoutUser() {
+  sessionStorage.removeItem("sh_sess");
+  sessionUser = null;
+  location.reload();
+}
 
 /* === DATA LAYER === */
 function loadData() {
@@ -42,6 +72,7 @@ function saveData() {
   localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
   localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(activityLog));
   localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+  localStorage.setItem("saleshub_tasks", JSON.stringify(tasks));
 }
 
 function addActivity(type, customerName, description) {
@@ -257,7 +288,7 @@ function renderSidebar() {
           <span>Customers</span>
           <svg class="nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <ul class="submenu submenu--open">
+        <ul class="submenu">
           <li class="nav-item nav-child" data-route="#customers-all"><span>All Customers</span></li>
           <li class="nav-item nav-child" data-route="#customers-new-leads"><span>New Leads</span></li>
           <li class="nav-item nav-child" data-route="#customers-interested"><span>Interested Customers</span></li>
@@ -272,7 +303,7 @@ function renderSidebar() {
           <span>Deals</span>
           <svg class="nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <ul class="submenu submenu--open">
+        <ul class="submenu">
           <li class="nav-item nav-child" data-route="#deals-won"><span>Won Deals</span></li>
           <li class="nav-item nav-child" data-route="#deals-lost"><span>Lost Deals</span></li>
         </ul>
@@ -282,6 +313,11 @@ function renderSidebar() {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         <span>Notes & Questions</span>
       </li>
+      <li class="sidebar-divider"></li>
+      <li class="nav-item" data-route="#tasks">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Tasks</span>
+      </li>
       <li class="nav-item" data-route="#settings">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>Settings</span>
@@ -290,19 +326,17 @@ function renderSidebar() {
     <div class="sidebar-collapse-btn" onclick="toggleSidebar()">
       <svg class="collapse-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
     </div>
+    <div class="logout-link" onclick="logoutUser()">Sign Out</div>
   `;
 
   // Attach nav item click handlers
   sidebar.querySelectorAll('.nav-item[data-route]').forEach(item => {
     item.addEventListener('click', () => {
-      // Expand sidebar if collapsed
-      const app = document.getElementById('app');
-      if (app.classList.contains('sidebar-collapsed')) {
-        app.classList.remove('sidebar-collapsed');
-      }
       currentSearchQuery = "";
       notesSearchQuery = "";
-      closeMobileSidebar();
+      taskSearchQuery = "";
+      taskStatusFilter = "all";
+      taskPriorityFilter = "all";
       window.location.hash = item.getAttribute('data-route');
     });
   });
@@ -313,7 +347,6 @@ function renderSidebar() {
       const app = document.getElementById('app');
       const parent = trigger.closest('.nav-parent');
       const submenu = parent.querySelector('.submenu');
-      // Expand sidebar if collapsed
       if (app.classList.contains('sidebar-collapsed')) {
         app.classList.remove('sidebar-collapsed');
       }
@@ -324,11 +357,11 @@ function renderSidebar() {
 
 function toggleSidebar() {
   const app = document.getElementById('app');
-  app.classList.toggle('sidebar-collapsed');
-  // Close all submenus when collapsing
-  if (app.classList.contains('sidebar-collapsed')) {
-    document.querySelectorAll('.submenu').forEach(sub => sub.classList.remove('submenu--open'));
+  const willCollapse = !app.classList.contains('sidebar-collapsed');
+  if (willCollapse) {
+    document.querySelectorAll('.submenu--open').forEach(s => s.classList.remove('submenu--open'));
   }
+  app.classList.toggle('sidebar-collapsed');
 }
 
 function updateSidebarActive(hash) {
@@ -343,38 +376,23 @@ function updateSidebarActive(hash) {
 
 /* === TOPBAR === */
 function renderTopbar() {
+  const s = getSession() || { avatar: "?" };
   const topbar = document.getElementById('topbar');
   topbar.innerHTML = `
-    <button class="hamburger-btn" onclick="toggleMobileSidebar()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
     <h1 id="page-title" class="topbar-title">Dashboard</h1>
     <div class="topbar-right">
       <div class="topbar-search">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="global-search" placeholder="Search customers...">
       </div>
-      <button id="notif-bell" class="topbar-icon-btn" onclick="toggleNotifDropdown()">
+      <button id="notif-bell" class="topbar-icon-btn" onclick="toggleNotifDropdown()" title="Notifications">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span class="notif-badge">${activityLog.length}</span>
+        <span class="notif-badge" style="display:none" id="notif-count"></span>
       </button>
-      <div class="user-avatar">AD</div>
+      <div class="user-avatar" onclick="logoutUser()" title="Sign out">${s.avatar}</div>
     </div>
   `;
-}
-
-function toggleMobileSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  sidebar.classList.toggle('sidebar--open');
-  overlay.classList.toggle('overlay--visible');
-}
-
-function closeMobileSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  sidebar.classList.remove('sidebar--open');
-  overlay.classList.remove('overlay--visible');
+  updateNotifBadge();
 }
 
 /* === HELPERS === */
@@ -396,6 +414,18 @@ function renderStatusBadge(status) {
 function renderAvatarCircle(name) {
   const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
   return `<span class="avatar-circle">${initials}</span>`;
+}
+
+function getStatusRoute(status) {
+  const m = {
+    "New Lead": "#customers-new-leads",
+    "Interested Customer": "#customers-interested",
+    "Hot Lead": "#customers-hot-leads",
+    "Follow Up": "#customers-follow-ups",
+    "Won Deal": "#deals-won",
+    "Lost Deal": "#deals-lost"
+  };
+  return m[status] || "#customers-all";
 }
 
 function deleteCustomer(id) {
@@ -534,7 +564,7 @@ function renderDashboard() {
                 <tr onclick="window.location.hash='#customer/${c.id}'" style="cursor:pointer">
                   <td><div class="td-with-avatar">${renderAvatarCircle(c.fullName)}<span>${c.fullName}</span></div></td>
                   <td>${c.phone}</td>
-                  <td>${renderStatusBadge(c.status)}</td>
+                  <td onclick="event.stopPropagation()"><a href="#" onclick="event.preventDefault();window.location.hash=getStatusRoute('${c.status}')" style="text-decoration:none">${renderStatusBadge(c.status)}</a></td>
                   <td>${c.nextFollowUpDate}</td>
                   <td>${c.source}</td>
                   <td onclick="event.stopPropagation()">
@@ -928,35 +958,45 @@ function deleteNote(customerId, noteId) {
 
 /* === NOTES PAGE === */
 let notesSearchQuery = "";
+let notesTypeFilter = "all";
 
 function getFilteredNotes() {
   const allNotes = [];
   customers.forEach(customer => {
     (customer.notes || []).forEach(note => {
-      allNotes.push({ ...note, customerName: customer.fullName, customerId: customer.id });
+      allNotes.push({ ...note, customerName: customer.fullName, customerId: customer.id, type: note.type || 'note' });
     });
   });
   allNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   return allNotes.filter(n =>
-    n.customerName.toLowerCase().includes(notesSearchQuery) ||
-    n.text.toLowerCase().includes(notesSearchQuery)
+    (n.customerName.toLowerCase().includes(notesSearchQuery) ||
+    n.text.toLowerCase().includes(notesSearchQuery)) &&
+    (notesTypeFilter === 'all' || n.type === notesTypeFilter)
   );
 }
 
 function buildNotesFeedHtml(filtered) {
-  if (filtered.length === 0) return '<div class="empty-state"><p>No notes found.</p></div>';
-  return filtered.map(note => `
+  if (filtered.length === 0) return '<div class="empty-state"><p>No notes or questions found.</p></div>';
+  return filtered.map(note => {
+    const isQuestion = note.type === 'question';
+    const badge = isQuestion
+      ? '<span class="nq-badge nq-badge--q">❓ Question</span>'
+      : '<span class="nq-badge nq-badge--n">📝 Note</span>';
+    return `
     <div class="note-feed-item">
       ${renderAvatarCircle(note.customerName)}
       <div class="note-feed-body">
-        <p class="note-feed-customer">
-          <a href="#" onclick="event.preventDefault(); window.location.hash='#customer/${note.customerId}'">${note.customerName}</a>
-        </p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <p class="note-feed-customer">
+            <a href="#" onclick="event.preventDefault(); window.location.hash='#customer/${note.customerId}'">${note.customerName}</a>
+          </p>
+          ${badge}
+        </div>
         <p class="note-feed-text">${note.text}</p>
         <p class="note-feed-date">${formatTimeAgo(note.createdAt)}</p>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function updateNotesFeed() {
@@ -968,7 +1008,7 @@ function updateNotesFeed() {
 }
 
 function renderNotes() {
-  notesSearchQuery = "";
+  notesSearchQuery = ""; notesTypeFilter = "all";
   const filtered = getFilteredNotes();
   const content = document.getElementById('content');
   content.innerHTML = `
@@ -978,11 +1018,20 @@ function renderNotes() {
         <span class="page-count">(${filtered.length})</span>
       </div>
       <div class="page-header-right">
-        <div class="page-search">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="notes-search" placeholder="Search notes or customers..." value="">
-        </div>
+        <button class="btn-primary btn-sm" onclick="showNoteQuestionModal('note')" style="width:auto">+ Add Note</button>
+        <button class="btn-primary btn-sm" onclick="showNoteQuestionModal('question')" style="width:auto">+ Add Question</button>
       </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center">
+      <div class="page-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="notes-search" placeholder="Search notes or customers..." value="">
+      </div>
+      <select id="notes-type-filter" class="form-select" style="width:auto">
+        <option value="all">All</option>
+        <option value="note">Notes only</option>
+        <option value="question">Questions only</option>
+      </select>
     </div>
     <div class="notes-feed">
       ${buildNotesFeedHtml(filtered)}
@@ -996,6 +1045,48 @@ function renderNotes() {
       updateNotesFeed();
     });
   }
+  const typeFilter = document.getElementById('notes-type-filter');
+  if (typeFilter) {
+    typeFilter.addEventListener('change', (e) => {
+      notesTypeFilter = e.target.value;
+      updateNotesFeed();
+    });
+  }
+}
+
+function showNoteQuestionModal(type) {
+  const isQuestion = type === 'question';
+  const title = isQuestion ? 'Add Question' : 'Add Note';
+  const placeholder = isQuestion ? 'Type your question...' : 'Type your note...';
+  const selectedCustId = window.location.hash.startsWith('#customer/') ? window.location.hash.replace('#customer/', '') : '';
+  const custOpts = customers.map(c => `<option value="${c.id}"${selectedCustId===c.id?' selected':''}>${c.fullName}</option>`).join('');
+
+  const html = `<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">${title}</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body">
+    <div class="form-group"><label class="form-label">Customer</label><select id="nq-customer" class="form-select"><option value="">Select customer...</option>${custOpts}</select></div>
+    <div class="form-group"><label class="form-label">${isQuestion?'Question':'Note'}</label><textarea id="nq-text" class="form-textarea" rows="4" placeholder="${placeholder}"></textarea></div>
+  </div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">Save</button></div></div></div>`;
+  const modal = document.getElementById('modal-overlay');
+  modal.innerHTML = html;
+  document.body.classList.add('modal-open');
+  modal.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  modal.querySelector('.modal-cancel').addEventListener('click', closeModal);
+  modal.querySelector('.modal-backdrop').addEventListener('click', e => { if (e.target.classList.contains('modal-backdrop')) closeModal(); });
+  document.addEventListener('keydown', handleEscapeKey);
+  modal.querySelector('.modal-submit').addEventListener('click', () => {
+    const custId = document.getElementById('nq-customer').value;
+    const text = document.getElementById('nq-text').value.trim();
+    if (!custId) { showToast('Select a customer', 'error'); return; }
+    if (!text) { showToast('Text is required', 'error'); return; }
+    const customer = customers.find(c => c.id === custId);
+    if (!customer) { showToast('Customer not found', 'error'); return; }
+    if (!customer.notes) customer.notes = [];
+    customer.notes.unshift({ id: Date.now(), text, type, createdAt: new Date().toISOString() });
+    addActivity(type + '_added', customer.fullName, `added a ${type}`);
+    saveData();
+    closeModal();
+    renderNotes();
+    showToast(isQuestion ? 'Question added' : 'Note added', 'success');
+  });
 }
 
 /* === SETTINGS PAGE === */
@@ -1049,37 +1140,302 @@ function applyTheme() {
 }
 
 /* === NOTIFICATION DROPDOWN === */
+let notifications = [];
+
+function loadNotifications() {
+  const stored = localStorage.getItem("saleshub_notifs");
+  if (stored) { notifications = JSON.parse(stored); }
+  else {
+    notifications = [
+      { id: 1, message: "New customer Mohamed Salah added", isRead: false, timestamp: new Date(Date.now() - 3600000).toISOString() },
+      { id: 2, message: "Task 'Send proposal to Sara Adel' is due soon", isRead: false, timestamp: new Date(Date.now() - 7200000).toISOString() },
+      { id: 3, message: "Amr Farouk moved to Hot Lead", isRead: true, timestamp: new Date(Date.now() - 86400000).toISOString() }
+    ];
+  }
+}
+function saveNotifications() {
+  localStorage.setItem("saleshub_notifs", JSON.stringify(notifications));
+}
+
+function updateNotifBadge() {
+  const badge = document.getElementById('notif-count');
+  if (!badge) return;
+  const unread = notifications.filter(n => !n.isRead).length;
+  if (unread > 0) { badge.style.display = ''; badge.textContent = unread > 99 ? '99+' : unread; }
+  else { badge.style.display = 'none'; }
+}
+
 function toggleNotifDropdown() {
   const existing = document.getElementById('notif-dropdown');
   if (existing) { existing.remove(); return; }
 
-  const last5 = activityLog.slice(0, 5);
-  const html = `
-    <div id="notif-dropdown" class="notif-dropdown">
-      <h4>Recent Activity</h4>
-      ${last5.length > 0 ? last5.map(a => `
-        <div class="notif-item">
-          <strong>${a.customerName}</strong> ${a.description}
-          <span class="notif-time">${formatTimeAgo(a.timestamp)}</span>
-        </div>
-      `).join('') : '<p class="notif-empty">No recent activity.</p>'}
-    </div>`;
+  const sorted = [...notifications].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  let html = '<div id="notif-dropdown" class="notif-dropdown">';
+  html += '<h4>Notifications <button class="btn-primary btn-sm" style="width:auto;font-size:11px;padding:4px 10px" onclick="event.stopPropagation();markAllNotifsRead()">Mark All as Read</button></h4>';
+  if (sorted.length) {
+    sorted.forEach(n => {
+      html += '<div class="notif-item' + (n.isRead ? '' : ' notif-item--unread') + '"><input type="checkbox" class="notif-check"' + (n.isRead ? ' checked' : '') + ' onclick="event.stopPropagation();toggleNotifRead(' + n.id + ', this.checked)" title="Mark as read"><div class="notif-body"><strong>' + n.message + '</strong><span class="notif-time">' + formatTimeAgo(n.timestamp) + '</span></div><button class="notif-dismiss" onclick="event.stopPropagation();dismissNotif(' + n.id + ')" title="Dismiss">&times;</button></div>';
+    });
+  } else {
+    html += '<div class="notif-empty">No notifications.</div>';
+  }
+  html += '</div>';
   document.body.insertAdjacentHTML('beforeend', html);
 
   const bell = document.getElementById('notif-bell');
   const rect = bell.getBoundingClientRect();
-  const dropdown = document.getElementById('notif-dropdown');
-  dropdown.style.top = (rect.bottom + 8) + 'px';
-  dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+  const dd = document.getElementById('notif-dropdown');
+  dd.style.top = (rect.bottom + 8) + 'px';
+  dd.style.right = (window.innerWidth - rect.right) + 'px';
 
   setTimeout(() => {
     document.addEventListener('click', function handler(e) {
-      if (!dropdown.contains(e.target) && e.target.id !== 'notif-bell' && !e.target.closest('#notif-bell')) {
-        dropdown.remove();
-        document.removeEventListener('click', handler);
+      if (!dd.contains(e.target) && e.target.id !== 'notif-bell' && !e.target.closest('#notif-bell')) {
+        dd.remove(); document.removeEventListener('click', handler);
       }
     });
   }, 0);
+}
+
+function dismissNotif(id) {
+  notifications = notifications.filter(n => n.id !== id);
+  saveNotifications();
+  const dd = document.getElementById('notif-dropdown');
+  if (dd) { const pos = { top: dd.style.top, right: dd.style.right }; dd.remove(); toggleNotifDropdown(); }
+  updateNotifBadge();
+}
+
+function toggleNotifRead(id, isRead) {
+  const n = notifications.find(x => x.id === id);
+  if (n) { n.isRead = isRead; saveNotifications(); updateNotifBadge(); }
+}
+
+function markAllNotifsRead() {
+  notifications.forEach(n => { n.isRead = true; });
+  saveNotifications();
+  const dd = document.getElementById('notif-dropdown');
+  if (dd) { dd.remove(); toggleNotifDropdown(); }
+  updateNotifBadge();
+}
+
+/* === TOAST === */
+function showToast(msg, type) {
+  let c = document.querySelector('.toast-container');
+  if (!c) { c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); }
+  const t = document.createElement('div');
+  t.className = 'toast toast--' + (type || 'info');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.remove(); if (!c.children.length) c.remove(); }, 3000);
+}
+
+/* === LOGIN === */
+function showLogin(msg) {
+  const overlay = document.createElement('div');
+  overlay.className = 'login-overlay';
+  overlay.innerHTML = `<div class="login-card">
+    <div class="login-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><rect x="3" y="12" width="3" height="9" rx="1"/><rect x="10" y="7" width="3" height="14" rx="1"/><rect x="17" y="3" width="3" height="18" rx="1"/></svg>
+      <span>SalesHub</span>
+    </div>
+    <h1>Welcome back</h1>
+    <p class="login-subtitle">Sign in to your account</p>
+    <div class="login-error${msg ? ' visible' : ''}" id="login-error">${msg || ''}</div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="login-email" placeholder="admin@saleshub.com" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" class="form-input" id="login-password" placeholder="Enter password" autocomplete="current-password">
+    </div>
+    <div class="form-error" id="login-field-error"></div>
+    <button class="btn-primary" id="login-btn">Sign In</button>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const emailEl = document.getElementById('login-email');
+  const passEl = document.getElementById('login-password');
+  const btn = document.getElementById('login-btn');
+  const fe = document.getElementById('login-field-error');
+
+  function handle() {
+    fe.textContent = ''; fe.classList.remove('visible');
+    const em = emailEl.value.trim(), pw = passEl.value;
+    if (!em) { fe.textContent = 'Email required'; fe.classList.add('visible'); return; }
+    if (!pw) { fe.textContent = 'Password required'; fe.classList.add('visible'); return; }
+    try {
+      loginUser(em, pw);
+      overlay.remove();
+      document.getElementById('app').style.display = 'flex';
+      renderSidebar(); renderTopbar(); router();
+    } catch (err) {
+      fe.textContent = err.message; fe.classList.add('visible');
+    }
+  }
+  btn.addEventListener('click', handle);
+  passEl.addEventListener('keydown', e => { if (e.key === 'Enter') handle(); });
+}
+
+/* === TASKS === */
+function renderTasks() {
+  const filtered = tasks.filter(t => {
+    if (taskSearchQuery && t.title.toLowerCase().indexOf(taskSearchQuery) === -1 && (t.description || '').toLowerCase().indexOf(taskSearchQuery) === -1) return false;
+    if (taskStatusFilter !== 'all' && t.status !== taskStatusFilter) return false;
+    if (taskPriorityFilter !== 'all' && t.priority !== taskPriorityFilter) return false;
+    return true;
+  });
+  const today = new Date().toISOString().split('T')[0];
+  filtered.forEach(t => { t._over = t.dueDate && t.dueDate < today && t.status !== 'done'; });
+  const stsOpts = ["todo","in_progress","done","overdue"].map(s => `<option value="${s}"${taskStatusFilter===s?' selected':''}>${s}</option>`).join('');
+  const priOpts = [{key:"low",label:"Low"},{key:"medium",label:"Medium"},{key:"high",label:"High"},{key:"urgent",label:"Urgent"}].map(p => `<option value="${p.key}"${taskPriorityFilter===p.key?' selected':''}>${p.label}</option>`).join('');
+  const priColors = { low: "#6B7280", medium: "#F59E0B", high: "#EF4444", urgent: "#DC2626" };
+  const rows = filtered.length ? filtered.map(t => {
+    const c = customers.find(x => x.id === t.customerId);
+    const stsOpts = ["todo","in_progress","done","overdue"].map(s => `<div class="ied-opt${t.status===s?' ied-opt--sel':''}" onclick="event.stopPropagation();inlineEditTask(${t.id},'status','${s}')">${s}</div>`).join('');
+    const priOpts = [{key:"low",label:"Low"},{key:"medium",label:"Medium"},{key:"high",label:"High"},{key:"urgent",label:"Urgent"}].map(p => `<div class="ied-opt${t.priority===p.key?' ied-opt--sel':''}" onclick="event.stopPropagation();inlineEditTask(${t.id},'priority','${p.key}')">${p.label}</div>`).join('');
+    return `<tr${t._over?' style="background:#FEF2F2"':''} onclick="showTaskDetail(${t.id})"><td><strong>${t.title}</strong></td><td>${c?c.fullName:'—'}</td><td>${t.assigneeName||'—'}</td>
+      <td class="ied-cell" onclick="event.stopPropagation()"><span class="ied-val"${t._over?' style="color:#EF4444;font-weight:600"':''}>${t._over?'Overdue':t.status}</span><div class="ied-drop">${stsOpts}</div></td>
+      <td class="ied-cell" onclick="event.stopPropagation()"><span class="ied-val" style="color:${priColors[t.priority]||'#6B7280'};font-weight:600">${t.priority}</span><div class="ied-drop">${priOpts}</div></td>
+      <td${t._over?' style="color:#EF4444;font-weight:600"':''}>${t.dueDate||'—'}</td>
+      <td onclick="event.stopPropagation()"><div class="action-btns"><input type="checkbox" class="task-check"${t.status==='done'?' checked':''} onclick="event.stopPropagation();toggleTaskDone(${t.id},this.checked)" title="Mark done"><button class="btn-icon btn-edit" onclick="showTaskModal(tasks.find(x=>x.id===${t.id}))" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="btn-icon btn-delete" onclick="deleteTask(${t.id})" title="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></div></td></tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--color-text-muted);padding:32px">No tasks found.</td></tr>';
+
+  document.getElementById('content').innerHTML = `<div class="page-header"><h2>Tasks</h2><button class="btn-primary btn-sm" onclick="showTaskModal()" style="width:auto">+ Add Task</button></div>
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="page-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="ts" placeholder="Search tasks..." value="${taskSearchQuery}"></div>
+      <select id="tss" class="form-select" style="width:auto"><option value="all">All Status</option>${stsOpts}</select>
+      <select id="tsp" class="form-select" style="width:auto"><option value="all">All Priority</option>${priOpts}</select>
+    </div>
+    <div class="table-card"><div class="table-wrap"><table class="data-table"><thead><tr><th>Title</th><th>Customer</th><th>Assigned To</th><th>Status</th><th>Priority</th><th>Due Date</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+
+  document.getElementById('ts').addEventListener('input', e => { taskSearchQuery = e.target.value.toLowerCase(); renderTasks(); });
+  document.getElementById('tss').addEventListener('change', e => { taskStatusFilter = e.target.value; renderTasks(); });
+  document.getElementById('tsp').addEventListener('change', e => { taskPriorityFilter = e.target.value; renderTasks(); });
+}
+
+function showTaskDetail(id) {
+  const t = tasks.find(x => x.id === id); if (!t) return;
+  const c = customers.find(x => x.id === t.customerId);
+  document.getElementById('content').innerHTML = `<div class="detail-back-bar"><button class="btn-back" onclick="renderTasks()">&larr; Back</button><h2>${t.title}</h2></div>
+    <div class="detail-columns"><div class="detail-left"><div class="detail-card"><div class="detail-card-header"><h3>Task Details</h3><button class="btn-primary btn-sm" onclick="showTaskModal(tasks.find(x=>x.id===${t.id}))" style="width:auto">Edit Task</button></div>
+    <div class="detail-fields">
+      <div class="detail-field"><span class="detail-label">Title</span><span class="detail-value"><strong>${t.title}</strong></span></div>
+      <div class="detail-field"><span class="detail-label">Description</span><span class="detail-value">${t.description||'—'}</span></div>
+      <div class="detail-field"><span class="detail-label">Customer</span><span class="detail-value">${c?c.fullName:'—'}</span></div>
+      <div class="detail-field"><span class="detail-label">Assigned To</span><span class="detail-value">${t.assigneeName||'Unassigned'}</span></div>
+      <div class="detail-field"><span class="detail-label">Status</span><span class="detail-value">${t.status}</span></div>
+      <div class="detail-field"><span class="detail-label">Priority</span><span class="detail-value">${t.priority}</span></div>
+      <div class="detail-field"><span class="detail-label">Due Date</span><span class="detail-value">${t.dueDate||'—'}</span></div>
+    </div></div></div></div>`;
+}
+
+let editTask = null;
+function showTaskModal(task) {
+  editTask = task || null; const ie = !!task;
+  const co = customers.map(c => `<option value="${c.id}"${ie&&task.customerId===c.id?' selected':''}>${c.fullName}</option>`).join('');
+  const so = ["todo","in_progress","done","overdue"].map(s => `<option value="${s}"${ie&&task.status===s?' selected':''}>${s}</option>`).join('');
+  const po = [{key:"low",label:"Low"},{key:"medium",label:"Medium"},{key:"high",label:"High"},{key:"urgent",label:"Urgent"}].map(p => `<option value="${p.key}"${ie&&task.priority===p.key?' selected':''}>${p.label}</option>`).join('');
+  const uo = DEMO_USERS.map(u => `<option value="${u.email}"${ie&&task.assigneeName===u.name?' selected':''}>${u.name}</option>`).join('');
+  const h = `<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">${ie?'Edit Task':'Add Task'}</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Title *</label><input type="text" id="t-title" class="form-input" placeholder="Task title" value="${ie?task.title:''}"></div><div class="form-group"><label class="form-label">Description</label><textarea id="t-desc" class="form-textarea" rows="2" placeholder="Task details">${ie?task.description||'':''}</textarea></div><div class="form-row"><div class="form-group"><label class="form-label">Customer</label><select id="t-cust" class="form-select"><option value="">None</option>${co}</select></div><div class="form-group"><label class="form-label">Assigned To</label><select id="t-assign" class="form-select"><option value="">Unassigned</option>${uo}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Status</label><select id="t-sts" class="form-select">${so}</select></div><div class="form-group"><label class="form-label">Priority</label><select id="t-pri" class="form-select">${po}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Due Date</label><input type="date" id="t-due" class="form-input" value="${ie?task.dueDate||'':''}"></div></div></div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">${ie?'Update':'Create'}</button></div></div></div>`;
+  document.getElementById('modal-overlay').innerHTML = h;
+  document.body.classList.add('modal-open');
+  document.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  document.querySelector('.modal-cancel').addEventListener('click', closeModal);
+  document.querySelector('.modal-backdrop').addEventListener('click', e => { if (e.target.classList.contains('modal-backdrop')) closeModal(); });
+  document.addEventListener('keydown', handleEscapeKey);
+  document.querySelector('.modal-submit').addEventListener('click', handleTaskSubmit);
+}
+
+function handleTaskSubmit() {
+  const title = document.getElementById('t-title').value.trim();
+  if (!title) { showToast('Title required', 'error'); return; }
+  const aVal = document.getElementById('t-assign').value;
+  const aName = aVal ? aVal : '';
+  const data = {
+    title, description: document.getElementById('t-desc').value.trim(),
+    customerId: document.getElementById('t-cust').value || null,
+    assignedTo: aVal || null, assigneeName: aName,
+    status: document.getElementById('t-sts').value,
+    priority: document.getElementById('t-pri').value,
+    dueDate: document.getElementById('t-due').value || null
+  };
+  if (editTask) {
+    Object.assign(editTask, data);
+    editTask.updatedAt = new Date().toISOString();
+    addActivity("task_update", editTask.title || "Task", "updated");
+    saveData();
+    showToast('Task updated', 'success');
+  } else {
+    const nt = Object.assign({ id: Date.now(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, data);
+    tasks.push(nt);
+    saveData();
+    showToast('Task created', 'success');
+  }
+  closeModal(); renderTasks();
+}
+
+function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  saveData();
+  showToast('Task deleted', 'success');
+  renderTasks();
+}
+
+function toggleTaskDone(id, checked) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  t.status = checked ? 'done' : 'todo';
+  t.updatedAt = new Date().toISOString();
+  addActivity("status_change", t.title, checked ? "task marked done" : "task reopened");
+  saveData();
+  showToast(checked ? 'Task completed' : 'Task reopened', 'success');
+  renderTasks();
+}
+
+let pendingInlineEdit = null;
+
+function inlineEditTask(taskId, field, newValue) {
+  const t = tasks.find(x => x.id === taskId);
+  if (!t) return;
+  pendingInlineEdit = { taskId, field, newValue };
+  // Close dropdown, show confirm bar
+  const drops = document.querySelectorAll('.ied-drop');
+  drops.forEach(d => d.classList.remove('ied-drop--open'));
+  // Remove any existing confirm bar
+  const old = document.querySelector('.ied-confirm');
+  if (old) old.remove();
+  // Show confirm on the row
+  const cell = document.querySelector(`tr[onclick*="showTaskDetail(${taskId})"] .ied-cell`);
+  if (!cell) return;
+  const confirm = document.createElement('div');
+  confirm.className = 'ied-confirm';
+  confirm.innerHTML = `<button class="ied-save" onclick="event.stopPropagation();confirmInlineEdit()">✓ Save</button><button class="ied-cancel" onclick="event.stopPropagation();cancelInlineEdit()">✗ Cancel</button>`;
+  confirm.style.cssText = 'position:absolute;background:var(--color-surface);border:1px solid var(--color-accent);border-radius:8px;padding:6px 10px;z-index:100;display:flex;gap:8px;box-shadow:0 4px 12px rgba(0,0,0,.1)';
+  cell.style.position = 'relative';
+  cell.appendChild(confirm);
+}
+
+function confirmInlineEdit() {
+  if (!pendingInlineEdit) return;
+  const t = tasks.find(x => x.id === pendingInlineEdit.taskId);
+  if (!t) return;
+  if (pendingInlineEdit.field === 'status') {
+    addActivity("status_change", t.title, `task status changed to ${pendingInlineEdit.newValue}`);
+  }
+  t[pendingInlineEdit.field] = pendingInlineEdit.newValue;
+  t.updatedAt = new Date().toISOString();
+  saveData();
+  pendingInlineEdit = null;
+  showToast('Updated', 'success');
+  renderTasks();
+}
+
+function cancelInlineEdit() {
+  pendingInlineEdit = null;
+  const c = document.querySelector('.ied-confirm');
+  if (c) c.remove();
 }
 
 /* === ROUTER === */
@@ -1093,7 +1449,8 @@ const PAGE_NAMES = {
   "#deals-won": "Won Deals",
   "#deals-lost": "Lost Deals",
   "#notes": "Notes & Questions",
-  "#settings": "Settings"
+  "#settings": "Settings",
+  "#tasks": "Tasks"
 };
 
 const ROUTES = {
@@ -1106,7 +1463,8 @@ const ROUTES = {
   "#deals-won": renderWonDeals,
   "#deals-lost": renderLostDeals,
   "#notes": renderNotes,
-  "#settings": renderSettings
+  "#settings": renderSettings,
+  "#tasks": renderTasks
 };
 
 function router() {
@@ -1154,32 +1512,48 @@ function router() {
 
 window.addEventListener("hashchange", router);
 window.addEventListener("DOMContentLoaded", () => {
-  // Inject sidebar overlay for mobile
-  const overlay = document.createElement('div');
-  overlay.id = 'sidebar-overlay';
-  overlay.className = 'sidebar-overlay';
-  overlay.addEventListener('click', closeMobileSidebar);
-  document.body.appendChild(overlay);
-
   loadData();
+  loadNotifications();
+
+  // Load tasks from localStorage (or use sample if none)
+  const storedTasks = localStorage.getItem("saleshub_tasks");
+  if (storedTasks) { tasks = JSON.parse(storedTasks); }
+  else {
+    tasks = [
+      { id: 1, title: "Follow up with Mohamed Salah", description: "Call to discuss pricing", assignedTo: null, assigneeName: null, customerId: "cust_101", status: "todo", priority: "high", dueDate: "2024-06-08", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" },
+      { id: 2, title: "Send proposal to Sara Adel", description: "Prepare and email proposal", assignedTo: null, assigneeName: null, customerId: "cust_105", status: "in_progress", priority: "urgent", dueDate: "2024-06-05", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" },
+      { id: 3, title: "Demo call with Amr Farouk", description: "Schedule product demo", assignedTo: null, assigneeName: null, customerId: "cust_109", status: "todo", priority: "medium", dueDate: "2024-06-07", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" },
+      { id: 4, title: "Review competitor analysis", description: "Research pricing for lost deal", assignedTo: null, assigneeName: null, customerId: "cust_118", status: "todo", priority: "low", dueDate: "2024-06-10", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" },
+      { id: 5, title: "Onboarding for Nadia Youssef", description: "Start enterprise onboarding", assignedTo: null, assigneeName: null, customerId: "cust_115", status: "in_progress", priority: "medium", dueDate: "2024-06-06", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" }
+    ];
+  }
+
+  // Auth check
+  if (!isAuth()) {
+    document.getElementById('app').style.display = 'none';
+    showLogin();
+    return;
+  }
+
   renderSidebar();
   renderTopbar();
 
-  // Topbar global search
+  // Topbar search — customers only
   const globalSearch = document.getElementById('global-search');
   if (globalSearch) {
     globalSearch.addEventListener('input', (e) => {
       const q = e.target.value.trim();
+      const hash = window.location.hash || "#dashboard";
       if (q.length > 0) {
         currentSearchQuery = q.toLowerCase();
-        if (window.location.hash !== "#customers-all") {
+        if (!hash.startsWith("#customers-") && !hash.startsWith("#deals-")) {
           window.location.hash = "#customers-all";
         } else {
           updateCustomerTable();
         }
       } else {
         currentSearchQuery = "";
-        if (window.location.hash === "#customers-all") {
+        if (hash.startsWith("#customers-") || hash.startsWith("#deals-")) {
           updateCustomerTable();
         }
       }
