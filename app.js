@@ -229,6 +229,7 @@ function handleModalSubmit(existingCustomer) {
     existingCustomer.lastContactDate = lastContact || new Date().toISOString().split('T')[0];
     existingCustomer.nextFollowUpDate = nextFollowUp || null;
     addActivity("status_change", name, "profile updated");
+    showToast("Customer updated", "success");
   } else {
     // Add mode
     const newCustomer = {
@@ -256,6 +257,7 @@ function handleModalSubmit(existingCustomer) {
     }
     customers.push(newCustomer);
     addActivity("new_customer", name, "added as new lead");
+    showToast("Customer created", "success");
   }
 
   saveData();
@@ -318,6 +320,10 @@ function renderSidebar() {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <span>Tasks</span>
       </li>
+      <li class="nav-item" data-route="#reports">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Reports</span>
+      </li>
       <li class="nav-item" data-route="#settings">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span>Settings</span>
@@ -379,11 +385,11 @@ function renderTopbar() {
   const s = getSession() || { avatar: "?" };
   const topbar = document.getElementById('topbar');
   topbar.innerHTML = `
-    <h1 id="page-title" class="topbar-title">Dashboard</h1>
+    <h1 id="page-title" class="topbar-title" aria-live="polite">Dashboard</h1>
     <div class="topbar-right">
-      <div class="topbar-search">
+      <div class="topbar-search" role="search">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="global-search" placeholder="Search customers...">
+        <input type="text" id="global-search" placeholder="Search customers..." aria-label="Search customers">
       </div>
       <button id="notif-bell" class="topbar-icon-btn" onclick="toggleNotifDropdown()" title="Notifications">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -434,6 +440,7 @@ function deleteCustomer(id) {
   customers = customers.filter(c => c.id !== id);
   if (customer) addActivity("status_change", customer.fullName, "was deleted");
   saveData();
+  showToast("Customer deleted", "success");
   router();
 }
 
@@ -933,6 +940,7 @@ function changeCustomerStatus(customerId, newStatus) {
   customer.status = newStatus;
   addActivity("status_change", customer.fullName, `moved from ${oldStatus} to ${newStatus}`);
   saveData();
+  showToast("Status updated", "success");
   renderCustomerDetail(customerId);
 }
 
@@ -945,6 +953,7 @@ function addNote(customerId) {
   customer.notes.unshift({ id: generateId("note"), text, createdAt: new Date().toISOString() });
   addActivity("note_added", customer.fullName, "added a note");
   saveData();
+  showToast("Note added", "success");
   renderCustomerDetail(customerId);
 }
 
@@ -953,6 +962,7 @@ function deleteNote(customerId, noteId) {
   if (!customer) return;
   customer.notes = (customer.notes || []).filter(n => n.id !== noteId);
   saveData();
+  showToast("Note deleted", "success");
   renderCustomerDetail(customerId);
 }
 
@@ -1438,6 +1448,60 @@ function cancelInlineEdit() {
   if (c) c.remove();
 }
 
+/* === REPORTS === */
+function renderReports() {
+  const total = customers.length;
+  const byStatus = STATUSES.map(s => ({ ...s, count: customers.filter(c => c.status === s.key).length }));
+  const bySource = SOURCES.map(s => ({ name: s, count: customers.filter(c => c.source === s).length })).filter(s => s.count > 0).sort((a, b) => b.count - a.count);
+  const wonCount = customers.filter(c => c.status === 'Won Deal').length;
+  const lostCount = customers.filter(c => c.status === 'Lost Deal').length;
+  const closedCount = wonCount + lostCount;
+  const conversionRate = closedCount > 0 ? Math.round((wonCount / closedCount) * 100) : 0;
+  const totalRevenue = customers.filter(c => c.status === 'Won Deal').reduce((s, c) => s + (c.dealValue || 0), 0);
+  const taskTotal = tasks.length;
+  const taskDone = tasks.filter(t => t.status === 'done').length;
+  const taskOverdue = tasks.filter(t => { const td = new Date().toISOString().split('T')[0]; return t.dueDate && t.dueDate < td && t.status !== 'done'; }).length;
+  const taskRate = taskTotal > 0 ? Math.round((taskDone / taskTotal) * 100) : 0;
+  const maxSource = Math.max(...bySource.map(s => s.count), 1);
+
+  const statusBars = byStatus.map(s => {
+    const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
+    return '<div class="rpt-row"><span class="rpt-label">' + s.key + '</span><div class="rpt-bar-wrap"><div class="rpt-bar" style="width:' + pct + '%;background:' + s.color + '"></div></div><span class="rpt-val">' + s.count + ' <small>' + pct + '%</small></span></div>';
+  }).join('');
+
+  const sourceBars = bySource.map(s => {
+    const pct = Math.round((s.count / maxSource) * 100);
+    return '<div class="rpt-row"><span class="rpt-label">' + s.name + '</span><div class="rpt-bar-wrap"><div class="rpt-bar" style="width:' + pct + '%;background:#3B82F6"></div></div><span class="rpt-val">' + s.count + '</span></div>';
+  }).join('');
+
+  document.getElementById('content').innerHTML =
+    '<div class="page-header"><h2>Reports</h2></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px">' +
+      '<div class="dashboard-panel"><div class="panel-header"><h3>Pipeline Overview</h3></div><div style="padding:20px">' + statusBars + '</div></div>' +
+      '<div class="dashboard-panel"><div class="panel-header"><h3>Lead Sources</h3></div><div style="padding:20px">' + (sourceBars || '<p style="color:var(--color-text-muted);text-align:center;padding:20px">No data</p>') + '</div></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px">' +
+      '<div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Conversion Rate</p><h2 class="stat-card__value">' + conversionRate + '%</h2><p class="stat-card__trend">Won vs Lost</p></div></div>' +
+      '<div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Total Revenue</p><h2 class="stat-card__value">$' + totalRevenue.toLocaleString() + '</h2><p class="stat-card__trend trend-up">Closed deals</p></div></div>' +
+      '<div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Task Completion</p><h2 class="stat-card__value">' + taskRate + '%</h2><p class="stat-card__trend">' + taskDone + '/' + taskTotal + ' done</p></div></div>' +
+      '<div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Overdue Tasks</p><h2 class="stat-card__value">' + taskOverdue + '</h2><p class="stat-card__trend trend-down">Needs attention</p></div></div>' +
+    '</div>' +
+    '<div class="dashboard-panel"><div class="panel-header"><h3>Sales Funnel</h3></div><div style="padding:20px"><canvas id="funnel-chart" style="max-height:280px"></canvas></div></div>';
+
+  setTimeout(function() {
+    var cv = document.getElementById('funnel-chart');
+    if (cv) {
+      var stages = ['New Lead', 'Interested Customer', 'Hot Lead', 'Follow Up', 'Won Deal', 'Lost Deal'];
+      var counts = stages.map(function(s) { return customers.filter(function(c) { return c.status === s; }).length; });
+      new Chart(cv.getContext('2d'), {
+        type: 'bar',
+        data: { labels: stages, datasets: [{ data: counts, backgroundColor: ['#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#10B981', '#6B7280'], borderRadius: 6 }] },
+        options: { indexAxis: 'y', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+      });
+    }
+  }, 50);
+}
+
 /* === ROUTER === */
 const PAGE_NAMES = {
   "#dashboard": "Dashboard",
@@ -1450,7 +1514,8 @@ const PAGE_NAMES = {
   "#deals-lost": "Lost Deals",
   "#notes": "Notes & Questions",
   "#settings": "Settings",
-  "#tasks": "Tasks"
+  "#tasks": "Tasks",
+  "#reports": "Reports"
 };
 
 const ROUTES = {
@@ -1464,7 +1529,8 @@ const ROUTES = {
   "#deals-lost": renderLostDeals,
   "#notes": renderNotes,
   "#settings": renderSettings,
-  "#tasks": renderTasks
+  "#tasks": renderTasks,
+  "#reports": renderReports
 };
 
 function router() {
