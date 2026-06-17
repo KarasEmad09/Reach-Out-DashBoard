@@ -1,8 +1,8 @@
 # SalesHub CRM — Update Plan
 
-**Stack:** Single self-contained HTML file | Plain HTML + CSS + JS | CDN libraries only | No backend | Android-first  
-**Storage:** IndexedDB (primary) + localStorage (settings/auth)  
-**Status:** Planning
+**Stack:** Multi-file | Plain HTML + CSS + JS | CDN libraries only | No backend  
+**Storage:** localStorage (all data) + sessionStorage (auth)  
+**Status:** Active
 
 ---
 
@@ -12,7 +12,7 @@
 - Complete and verify each sub-phase before moving to the next.
 - After every phase: stop, report what was done, and generate a verification checklist.
 - Do not auto-continue. Wait for manual confirmation before proceeding.
-- Prioritize: Reliability > Maintainability > UX > Speed.
+- Prioritize: Reliability > Maintainability > Speed.
 
 ---
 
@@ -25,238 +25,173 @@ After every completed phase, the AI must generate a checklist using this format.
 
 [ ] Sub-phase task was completed as described
 [ ] No console errors or JS exceptions
-[ ] Feature works correctly on Android (mobile viewport)
-[ ] All new data correctly reads/writes to IndexedDB
+[ ] Feature works correctly on mobile viewport
 [ ] UI updates reflect the change without a page reload
-[ ] Role-based visibility is respected (if applicable)
-[ ] Error states handled (empty input, failed DB op, etc.)
+[ ] Error states handled (empty input, validation failure, etc.)
 [ ] PROGRESS.md updated with completed task and results
-[ ] CHANGELOG.md updated with version entry
 [ ] Ready to proceed to next sub-phase: YES / NO
 ```
 
 ---
 
-## PHASE 1 — Project Foundation & Architecture Refactor
-**Status:** In Progress (1.6 complete)  
-**Goal:** Restructure the existing single HTML file into clearly separated internal modules using JS module pattern (IIFE or object namespacing). Establish documentation files.
+## PHASE 1 — Project Foundation & Architecture
+**Status:** ✅ Complete  
+**Goal:** Establish file structure, constants, data layer, CSS variables, and documentation.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 1.1 | Audit existing HTML file — document all current features, sections, and JS functions | Not Started |
-| 1.2 | Define internal module structure (AppDB, AppAuth, AppUI, AppCRM, AppTasks, AppNotifications, AppAudit, AppAnalytics) | Not Started |
-| 1.3 | Establish IndexedDB schema design (replaces PostgreSQL) | Not Started |
-| 1.4 | Define shared constants and config object (roles, statuses, pipeline stages) | Not Started |
-| 1.5 | Define error handling strategy (toast notifications for all errors) | Not Started |
-| 1.6 | Create PLAN.md, PROGRESS.md, CHANGELOG.md | ✅ Done |
+| 1.1 | Audit existing project — document all features, sections, and JS functions | ✅ Done |
+| 1.2 | Define module structure (AppAuth, AppUI, AppCRM, AppTasks, AppNotifications) | ✅ Done |
+| 1.3 | Define data storage approach (localStorage arrays) | ✅ Done |
+| 1.4 | Define shared constants and config (roles, statuses, pipeline stages) | ✅ Done |
+| 1.5 | Define error handling strategy (toast notifications) | ✅ Done |
+| 1.6 | Create PLAN.md, PROGRESS.md | ✅ Done |
 
-**Dependencies:** None  
-**Libraries needed:** None (built-in IndexedDB API)
+**Dependencies:** None
 
 ---
 
-## PHASE 2 — Data Layer (IndexedDB Schema)
-**Status:** Not Started  
-**Goal:** Replace any ad-hoc localStorage data with a proper IndexedDB schema. Structured like a relational DB but client-side.
+## PHASE 2 — Data Layer & Seed Data
+**Status:** ✅ Complete  
+**Goal:** Define all data structures and seed with realistic sample data.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 2.1 | Define and initialize IndexedDB database (`saleshub_db`) | Not Started |
-| 2.2 | Object store: `users` (id, name, email, role, passwordHash, createdAt) | Not Started |
-| 2.3 | Object store: `roles` (super_admin, admin, employee) | Not Started |
-| 2.4 | Object store: `customers` (id, name, email, phone, company, status, assignedTo, source, createdAt, updatedAt) | Not Started |
-| 2.5 | Object store: `customer_notes` (id, customerId, userId, content, createdAt) | Not Started |
-| 2.6 | Object store: `tasks` (id, title, description, assignedTo, customerId, dueDate, status, priority, createdAt) | Not Started |
-| 2.7 | Object store: `notifications` (id, userId, type, message, isRead, createdAt, referenceId) | Not Started |
-| 2.8 | Object store: `audit_logs` (id, userId, action, entityType, entityId, details, timestamp) | Not Started |
-| 2.9 | Object store: `analytics_events` (id, userId, eventType, page, target, timestamp, metadata) | Not Started |
-| 2.10 | Seed data: default super admin user + sample customers + sample tasks | Not Started |
+| 2.1 | Users array (demo credentials, roles) | ✅ Done |
+| 2.2 | Customers array (20 records, all statuses) | ✅ Done |
+| 2.3 | Customer notes array (inline on each customer) | ✅ Done |
+| 2.4 | Tasks array (5 sample tasks) | ✅ Done |
+| 2.5 | Notifications array (read/unread state) | ✅ Done |
+| 2.6 | Activity log array (audit trail) | ✅ Done |
+| 2.7 | Settings object (theme, preferences) | ✅ Done |
+| 2.8 | localStorage persistence — save/load all arrays | ✅ Done |
 
-**Dependencies:** Phase 1  
-**Libraries needed:** None (native IndexedDB)
+**Dependencies:** Phase 1
 
 ---
 
-## PHASE 3 — Authentication & Role-Based Access Control
-**Status:** Not Started  
-**Goal:** Local auth system with role enforcement. No server — passwords hashed client-side using SubtleCrypto (SHA-256).
+## PHASE 3 — Authentication & Session
+**Status:** ✅ Complete  
+**Goal:** Simple login system with session persistence.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 3.1 | Login page/modal UI (email + password fields) | Not Started |
-| 3.2 | Password hashing with SubtleCrypto SHA-256 (replaces bcrypt) | Not Started |
-| 3.3 | Session handling via sessionStorage (active user object) | Not Started |
-| 3.4 | Route/view protection — redirect to login if no active session | Not Started |
-| 3.5 | Role definitions: super_admin / admin / employee | Not Started |
-| 3.6 | Super Admin permissions: all access + user management + delete + analytics | Not Started |
-| 3.7 | Admin permissions: manage customers, tasks, view reports | Not Started |
-| 3.8 | Employee permissions: view/edit assigned customers and tasks only | Not Started |
-| 3.9 | UI elements conditionally shown/hidden based on role | Not Started |
-| 3.10 | Auth testing: login, wrong password, session persistence, logout | Not Started |
+| 3.1 | Login page UI (email + password fields) | ✅ Done |
+| 3.2 | Plaintext credential check (demo users array) | ✅ Done |
+| 3.3 | Session handling via sessionStorage | ✅ Done |
+| 3.4 | Route protection — show login if no session | ✅ Done |
+| 3.5 | Sign Out button + session clearing | ✅ Done |
 
-**Dependencies:** Phase 2  
-**Libraries needed:** SubtleCrypto (built-in browser API)
+**Dependencies:** Phase 2
 
 ---
 
 ## PHASE 4 — CRM Core Features
-**Status:** Not Started  
-**Goal:** Full customer lifecycle management within the single-file app.
+**Status:** ✅ Complete  
+**Goal:** Full customer lifecycle management.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 4.1 | Customer creation form (name, email, phone, company, source, status, assigned user) | Not Started |
-| 4.2 | Customer edit modal | Not Started |
-| 4.3 | Customer assignment to users (dropdown filtered by role) | Not Started |
-| 4.4 | Customer search (real-time filter by name/email/company) | Not Started |
-| 4.5 | Customer filtering (by status, assigned user, source, date range) | Not Started |
-| 4.6 | Customer pipeline view (Kanban-style drag-and-drop columns by status) | Not Started |
-| 4.7 | Customer status changes (with confirmation + audit log trigger) | Not Started |
-| 4.8 | Customer history tab (all notes, status changes, task references) | Not Started |
-| 4.9 | Customer timeline view (chronological activity feed per customer) | Not Started |
-| 4.10 | CRM testing: CRUD, search, filter, pipeline drag, history | Not Started |
+| 4.1 | Customer creation form (name, phone, email, company, source, status, dates) | ✅ Done |
+| 4.2 | Customer edit modal (pre-filled, validation) | ✅ Done |
+| 4.3 | Customer search (real-time filter by name/phone/email) | ✅ Done |
+| 4.4 | Customer filtering by status (New Leads, Interested, Hot, Follow Up, Won, Lost) | ✅ Done |
+| 4.5 | Customer status changes with activity logging | ✅ Done |
+| 4.6 | Customer detail page (info, notes, status change) | ✅ Done |
+| 4.7 | Customer notes — add and delete per customer | ✅ Done |
+| 4.8 | Dashboard — stat cards, Chart.js doughnut, activity feed, follow-ups table | ✅ Done |
+| 4.9 | Customer delete with confirmation | ✅ Done |
 
-**Dependencies:** Phase 3  
-**Libraries needed:** SortableJS (drag-and-drop for pipeline)
+**Dependencies:** Phase 3
 
 ---
 
-## PHASE 5 — Task Management Module
-**Status:** Not Started  
-**Goal:** Fully separate sidebar section for task management, linked to customers and users.
+## PHASE 5 — Task Management
+**Status:** ✅ Complete  
+**Goal:** Task list with CRUD, filters, and overdue indicators.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 5.1 | Tasks sidebar navigation item | Not Started |
-| 5.2 | Tasks list page (all tasks, filterable) | Not Started |
-| 5.3 | Task detail view/modal | Not Started |
-| 5.4 | Task creation (title, description, assigned user, linked customer, due date, priority) | Not Started |
-| 5.5 | Task assignment and reassignment | Not Started |
-| 5.6 | Task status tracking (To Do / In Progress / Done / Overdue) | Not Started |
-| 5.7 | Task due date with overdue visual indicator | Not Started |
-| 5.8 | Task notifications (trigger to Notifications module on assignment/update) | Not Started |
-| 5.9 | Task history (log of status changes per task) | Not Started |
-| 5.10 | Task search and filters (by status, assignee, priority, due date) | Not Started |
+| 5.1 | Tasks sidebar navigation item | ✅ Done |
+| 5.2 | Tasks list page (all tasks, filterable by status/priority) | ✅ Done |
+| 5.3 | Task detail view | ✅ Done |
+| 5.4 | Task creation modal (title, description, customer, priority, due date) | ✅ Done |
+| 5.5 | Task status tracking (To Do, In Progress, Done, Overdue) | ✅ Done |
+| 5.6 | Task due date with overdue visual indicator | ✅ Done |
+| 5.7 | Task search and filters | ✅ Done |
+| 5.8 | Inline status and priority editing via hover dropdown | ✅ Done |
+| 5.9 | Checkbox to mark task as Done in Actions column | ✅ Done |
 
-**Dependencies:** Phase 4  
-**Libraries needed:** None (native JS date handling)
+**Dependencies:** Phase 4
 
 ---
 
 ## PHASE 6 — Notifications System
-**Status:** Not Started  
-**Goal:** In-app notification center with unread counter in the header.
+**Status:** ✅ Complete  
+**Goal:** In-app notification bell with dropdown, read/unread state, and dismiss.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 6.1 | Notification bell icon in header with unread count badge | Not Started |
-| 6.2 | Notification dropdown/panel (list of recent notifications) | Not Started |
-| 6.3 | Mark as read (single + mark all as read) | Not Started |
-| 6.4 | Assignment notifications (customer or task assigned to you) | Not Started |
-| 6.5 | Task notifications (due soon, overdue, status changed) | Not Started |
-| 6.6 | Follow-up / reminder notifications (manual or auto-generated) | Not Started |
-| 6.7 | Notification persistence in IndexedDB (`notifications` store) | Not Started |
+| 6.1 | Bell icon in header with unread count badge | ✅ Done |
+| 6.2 | Notification dropdown panel | ✅ Done |
+| 6.3 | Mark as read (checkbox per item + mark all as read) | ✅ Done |
+| 6.4 | Per-notification dismiss (X button) | ✅ Done |
+| 6.5 | Empty state when all dismissed | ✅ Done |
+| 6.6 | Persist to localStorage | ✅ Done |
 
-**Dependencies:** Phase 5  
-**Libraries needed:** None
+**Dependencies:** Phase 5
 
 ---
 
-## PHASE 7 — Audit Logging System
-**Status:** Not Started  
-**Goal:** Every important action is logged silently to IndexedDB and viewable by admin/super_admin.
+## PHASE 7 — Audit Logging
+**Status:** In Progress  
+**Goal:** Track important actions in an activity log viewable by all users.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 7.1 | Audit log write function (auto-called on every tracked action) | Not Started |
-| 7.2 | Tracked events: customer created/updated/deleted/assigned | Not Started |
-| 7.3 | Tracked events: task created/updated/assigned/completed | Not Started |
-| 7.4 | Tracked events: user login/logout | Not Started |
-| 7.5 | Tracked events: role changed, user created/deleted | Not Started |
-| 7.6 | Audit log viewer page (admin only) — filterable by user, action, date | Not Started |
+| 7.1 | Activity log write function (auto-called on tracked actions) | ✅ Done |
+| 7.2 | Tracked events: customer created/updated/deleted | ✅ Done |
+| 7.3 | Tracked events: task created/updated/completed | ✅ Done |
+| 7.4 | Tracked events: status changes, notes added/deleted | ✅ Done |
+| 7.5 | Activity log viewer modal — View All on dashboard | ✅ Done |
+| 7.6 | Audit log viewer page with filters (by action type, date) | Not Started |
 
-**Dependencies:** Phase 6  
-**Libraries needed:** None
+**Dependencies:** Phase 6
 
 ---
 
-## PHASE 8 — UX Analytics & Behavior Tracking
+## PHASE 8 — Reporting Dashboard
 **Status:** Not Started  
-**Goal:** Track user behavior inside the app for UX improvement. All data stays local in IndexedDB.
+**Goal:** Visual reports accessible from sidebar.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 8.1 | Page visit tracking (which views are opened and how often) | Not Started |
-| 8.2 | Click event tracking (button-level, tagged with data attributes) | Not Started |
-| 8.3 | Dead click detection (clicks that produce no visible result) | Not Started |
-| 8.4 | Rage click detection (3+ rapid clicks on same element) | Not Started |
-| 8.5 | Scroll depth tracking per page | Not Started |
-| 8.6 | Navigation flow tracking (page-to-page sequence) | Not Started |
-| 8.7 | Most/least used features report | Not Started |
-| 8.8 | Time-on-page tracking | Not Started |
-| 8.9 | Search and filter usage patterns | Not Started |
-| 8.10 | UX analytics dashboard (super_admin only) | Not Started |
-
-**UX Evaluation Rule (apply to every screen):**
-- Every button: does it do what the user expects?
-- Every icon: is the meaning obvious without a label?
-- Every card: understandable in under 3 seconds?
-- Every workflow: completable with minimum clicks?
+| 8.1 | Customer reports (by status, source) | Not Started |
+| 8.2 | Task reports (completion rate, overdue rate) | Not Started |
+| 8.3 | Conversion reports (pipeline stage progression) | Not Started |
+| 8.4 | Lead source reports (which source produces most customers) | Not Started |
+| 8.5 | Sales funnel chart (pipeline drop-off visualization) | Not Started |
 
 **Dependencies:** Phase 7  
-**Libraries needed:** None (custom lightweight tracker)
-
----
-
-## PHASE 9 — Reporting & Analytics Dashboard
-**Status:** Not Started  
-**Goal:** Visual reports for admins and super admins.
-
-| Sub-Phase | Task | Status |
-|-----------|------|--------|
-| 9.1 | Customer reports (by status, source, assigned user, date range) | Not Started |
-| 9.2 | Employee activity reports (customers handled, tasks completed, logins) | Not Started |
-| 9.3 | Task reports (completion rate, overdue rate, by assignee) | Not Started |
-| 9.4 | Conversion reports (pipeline stage progression rates) | Not Started |
-| 9.5 | Lead source reports (which source produces most customers) | Not Started |
-| 9.6 | Sales funnel chart (visual pipeline drop-off) | Not Started |
-| 9.7 | UX behavior reports (from Phase 8 data) | Not Started |
-
-**Dependencies:** Phase 8  
 **Libraries needed:** Chart.js (CDN)
 
 ---
 
-## PHASE 10 — Polish & Optimization
-**Status:** Not Started  
-**Goal:** Final pass on performance, accessibility, consistency, and Android UX.
+## PHASE 9 — Polish & Optimization
+**Status:** In Progress  
+**Goal:** Final pass on performance, accessibility, dark mode, mobile responsiveness.
 
 | Sub-Phase | Task | Status |
 |-----------|------|--------|
-| 10.1 | JS performance — debounce search, lazy-load heavy views | Not Started |
-| 10.2 | Accessibility review (ARIA labels, focus management, contrast) | Not Started |
-| 10.3 | Android/mobile responsiveness pass (touch targets, scroll behavior) | Not Started |
-| 10.4 | UI consistency audit (spacing, colors, font sizes, button styles) | Not Started |
-| 10.5 | Error handling review (every async op has a catch + user feedback) | Not Started |
-| 10.6 | Security review (XSS prevention, input sanitization) | Not Started |
-| 10.7 | Final end-to-end testing across all roles | Not Started |
-| 10.8 | File size optimization (minify inline CSS/JS if needed) | Not Started |
+| 9.1 | Dark mode — CSS variable overrides, badge fixes, scrollbar | ✅ Done |
+| 9.2 | Keyboard focus — visible focus-visible rings on all interactive elements | ✅ Done |
+| 9.3 | Reduced motion — prefers-reduced-motion media query | ✅ Done |
+| 9.4 | Responsive layout — tablet and mobile breakpoints | Not Started |
+| 9.5 | ARIA labels and accessibility review | Not Started |
+| 9.6 | Toast consistency — all actions produce toasts | Not Started |
+| 9.7 | Final end-to-end testing across all pages | Not Started |
 
-**Dependencies:** Phase 9  
-**Libraries needed:** None
-
----
-
-## FUTURE FEATURES (Post-Phase 10)
-
-- Export data to CSV (customers, tasks, reports)
-- Import customers from CSV
-- Dark mode toggle
-- Offline-first PWA wrapper
-- Email integration (mailto links + templates)
-- WhatsApp click-to-chat integration
-- Recurring task scheduling
-- Multi-file split (if single file becomes too large)
+**Dependencies:** Phase 8
 
 ---
 
@@ -264,11 +199,10 @@ After every completed phase, the AI must generate a checklist using this format.
 
 | Concern | Solution |
 |---------|----------|
-| Data storage | IndexedDB via native API |
-| Auth | SubtleCrypto SHA-256 + sessionStorage |
-| Drag & drop | SortableJS (CDN) |
+| Data storage | localStorage (arrays) + sessionStorage (auth) |
+| Auth | Plaintext credential check (demo) |
 | Charts | Chart.js (CDN) |
-| Icons | Lucide (CDN) |
-| Toasts | Custom toast.js (inline) |
-| Framework | None — plain JS module pattern |
-| Deployment | Single HTML file, open in browser |
+| Icons | Inline SVG |
+| Toasts | Custom inline implementation |
+| Framework | None — plain JS |
+| Deployment | Multi-file, open index.html in browser |
