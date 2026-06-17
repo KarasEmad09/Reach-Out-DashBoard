@@ -1,0 +1,204 @@
+{
+  "description": "SalesHub CRM — PocketBase Schema Definition v1.0",
+  "collections": [
+    {
+      "name": "sources",
+      "type": "base",
+      "system": false,
+      "listRule": "@request.auth.id != ''",
+      "viewRule": "@request.auth.id != ''",
+      "createRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "updateRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "deleteRule": "@request.auth.role = 'super_admin'",
+      "fields": [
+        { "name": "name", "type": "text", "required": true, "unique": false },
+        { "name": "order", "type": "number", "required": false, "min": 0 }
+      ]
+    },
+    {
+      "name": "customers",
+      "type": "base",
+      "system": false,
+      "listRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin' || (@request.auth.role = 'employee' && assigned_to = @request.auth.id)",
+      "viewRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin' || (@request.auth.role = 'employee' && assigned_to = @request.auth.id)",
+      "createRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "updateRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin' || (@request.auth.role = 'employee' && assigned_to = @request.auth.id)",
+      "deleteRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "fields": [
+        { "name": "full_name",        "type": "text",     "required": true,  "max": 200 },
+        { "name": "phone",            "type": "text",     "required": true,  "max": 30 },
+        { "name": "email",            "type": "email",    "required": false },
+        { "name": "company",          "type": "text",     "required": false, "max": 200 },
+        { "name": "source",           "type": "text",     "required": false, "max": 100 },
+        { "name": "status",           "type": "select",   "required": true,  "values": ["New Lead","Interested Customer","Hot Lead","Follow Up","Won Deal","Lost Deal"] },
+        { "name": "lifecycle",        "type": "select",   "required": true,  "values": ["lead","prospect","active_customer","inactive","churned"] },
+        { "name": "assigned_to",      "type": "relation", "required": false, "collectionId": "_users_placeholder_", "cascadeDelete": false },
+        { "name": "deal_value",       "type": "number",   "required": false, "min": 0 },
+        { "name": "product",          "type": "text",     "required": false, "max": 200 },
+        { "name": "lost_reason",      "type": "text",     "required": false, "max": 500 },
+        { "name": "last_contact_date","type": "date",     "required": false },
+        { "name": "next_followup",    "type": "date",     "required": false },
+        { "name": "notes_count",      "type": "number",   "required": false, "min": 0 }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_customers_status ON customers(status)",
+        "CREATE INDEX idx_customers_lifecycle ON customers(lifecycle)",
+        "CREATE INDEX idx_customers_assigned ON customers(assigned_to)",
+        "CREATE INDEX idx_customers_source ON customers(source)",
+        "CREATE INDEX idx_customers_followup ON customers(next_followup) WHERE next_followup != ''",
+        "CREATE INDEX idx_customers_created ON customers(created)"
+      ]
+    },
+    {
+      "name": "notes",
+      "type": "base",
+      "system": false,
+      "listRule": "@request.auth.id != ''",
+      "viewRule": "@request.auth.id != ''",
+      "createRule": "@request.auth.id != ''",
+      "updateRule": "@request.auth.id = author_id",
+      "deleteRule": "@request.auth.id = author_id || @request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "fields": [
+        { "name": "customer_id", "type": "relation", "required": true,  "collectionId": "customers_placeholder_", "cascadeDelete": true },
+        { "name": "author_id",   "type": "relation", "required": true,  "collectionId": "_users_placeholder_", "cascadeDelete": false },
+        { "name": "text",        "type": "text",      "required": true,  "max": 2000 },
+        { "name": "type",        "type": "select",    "required": false, "values": ["note","question"], "default": "note" }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_notes_customer ON notes(customer_id)",
+        "CREATE INDEX idx_notes_author ON notes(author_id)",
+        "CREATE INDEX idx_notes_created ON notes(created)"
+      ]
+    },
+    {
+      "name": "tasks",
+      "type": "base",
+      "system": false,
+      "listRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin' || (@request.auth.role = 'employee' && assigned_to = @request.auth.id)",
+      "viewRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin' || (@request.auth.role = 'employee' && assigned_to = @request.auth.id)",
+      "createRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "updateRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin' || (@request.auth.role = 'employee' && assigned_to = @request.auth.id)",
+      "deleteRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "fields": [
+        { "name": "title",        "type": "text",     "required": true,  "max": 300 },
+        { "name": "description",  "type": "text",     "required": false, "max": 2000 },
+        { "name": "customer_id",  "type": "relation", "required": false, "collectionId": "customers_placeholder_", "cascadeDelete": false },
+        { "name": "assigned_to",  "type": "relation", "required": false, "collectionId": "_users_placeholder_", "cascadeDelete": false },
+        { "name": "created_by",   "type": "relation", "required": true,  "collectionId": "_users_placeholder_", "cascadeDelete": false },
+        { "name": "status",       "type": "select",   "required": true,  "values": ["todo","in_progress","done","overdue"], "default": "todo" },
+        { "name": "priority",     "type": "select",   "required": true,  "values": ["low","medium","high","urgent"], "default": "medium" },
+        { "name": "due_date",     "type": "date",     "required": false }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_tasks_assigned ON tasks(assigned_to)",
+        "CREATE INDEX idx_tasks_status ON tasks(status)",
+        "CREATE INDEX idx_tasks_priority ON tasks(priority)",
+        "CREATE INDEX idx_tasks_customer ON tasks(customer_id)",
+        "CREATE INDEX idx_tasks_due ON tasks(due_date) WHERE status != 'done'"
+      ]
+    },
+    {
+      "name": "activity_log",
+      "type": "base",
+      "system": false,
+      "listRule": "@request.auth.id != ''",
+      "viewRule": "@request.auth.id != ''",
+      "createRule": "@request.auth.id != ''",
+      "updateRule": null,
+      "deleteRule": "@request.auth.role = 'super_admin'",
+      "fields": [
+        { "name": "type",          "type": "select", "required": true,  "values": ["status_change","note_added","follow_up","new_customer","customer_deleted","task_update","task_done","task_reopened"] },
+        { "name": "user_id",       "type": "relation", "required": true,  "collectionId": "_users_placeholder_", "cascadeDelete": false },
+        { "name": "customer_id",   "type": "relation", "required": false, "collectionId": "customers_placeholder_", "cascadeDelete": false },
+        { "name": "customer_name", "type": "text",     "required": true,  "max": 200 },
+        { "name": "description",   "type": "text",     "required": true,  "max": 500 }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_activity_created ON activity_log(created)",
+        "CREATE INDEX idx_activity_user ON activity_log(user_id)",
+        "CREATE INDEX idx_activity_customer ON activity_log(customer_id)",
+        "CREATE INDEX idx_activity_type ON activity_log(type)"
+      ]
+    },
+    {
+      "name": "notifications",
+      "type": "base",
+      "system": false,
+      "listRule": "recipient_id = @request.auth.id",
+      "viewRule": "recipient_id = @request.auth.id",
+      "createRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "updateRule": "recipient_id = @request.auth.id",
+      "deleteRule": "recipient_id = @request.auth.id",
+      "fields": [
+        { "name": "recipient_id",   "type": "relation", "required": true,  "collectionId": "_users_placeholder_", "cascadeDelete": true },
+        { "name": "type",           "type": "select",   "required": true,  "values": ["task_assigned","status_change","follow_up_due","note_added","customer_assigned"] },
+        { "name": "message",        "type": "text",     "required": true,  "max": 500 },
+        { "name": "reference_type", "type": "select",   "required": false, "values": ["customer","task","note"] },
+        { "name": "reference_id",   "type": "text",     "required": false, "max": 100 },
+        { "name": "is_read",        "type": "bool",     "required": false, "default": false }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_notifs_user_read ON notifications(recipient_id, is_read, created)",
+        "CREATE INDEX idx_notifs_type ON notifications(type)"
+      ]
+    },
+    {
+      "name": "audit_log",
+      "type": "base",
+      "system": false,
+      "listRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "viewRule": "@request.auth.role = 'super_admin' || @request.auth.role = 'admin'",
+      "createRule": "@request.auth.id != ''",
+      "updateRule": null,
+      "deleteRule": "@request.auth.role = 'super_admin'",
+      "fields": [
+        { "name": "user_id",     "type": "relation", "required": true,  "collectionId": "_users_placeholder_", "cascadeDelete": false },
+        { "name": "action",      "type": "select",   "required": true,  "values": ["created","updated","deleted","status_changed","assigned","reassigned","login","logout","note_added","note_deleted"] },
+        { "name": "entity_type", "type": "select",   "required": true,  "values": ["customer","task","note","user","settings"] },
+        { "name": "entity_id",   "type": "text",     "required": false, "max": 100 },
+        { "name": "details",     "type": "text",     "required": false, "max": 2000 },
+        { "name": "ip_address",  "type": "text",     "required": false, "max": 45 }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_audit_user ON audit_log(user_id)",
+        "CREATE INDEX idx_audit_entity ON audit_log(entity_type, entity_id)",
+        "CREATE INDEX idx_audit_created ON audit_log(created)"
+      ]
+    },
+    {
+      "name": "settings",
+      "type": "base",
+      "system": false,
+      "listRule": "user_id = @request.auth.id",
+      "viewRule": "user_id = @request.auth.id",
+      "createRule": "@request.auth.id != ''",
+      "updateRule": "user_id = @request.auth.id",
+      "deleteRule": "user_id = @request.auth.id",
+      "fields": [
+        { "name": "user_id", "type": "relation", "required": true,  "collectionId": "_users_placeholder_", "cascadeDelete": true },
+        { "name": "key",     "type": "text",     "required": true,  "max": 100 },
+        { "name": "value",   "type": "text",     "required": false, "max": 2000 }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_settings_user_key ON settings(user_id, key)"
+      ]
+    }
+  ],
+  "seed_data": {
+    "users": [
+      { "email": "admin@saleshub.com",  "password": "Admin@123456",  "passwordConfirm": "Admin@123456", "name": "Super Admin", "role": "super_admin" },
+      { "email": "manager@saleshub.com","password": "Manager@123456","passwordConfirm": "Manager@123456", "name": "Sales Manager", "role": "admin" },
+      { "email": "agent@saleshub.com",  "password": "Agent@123456",  "passwordConfirm": "Agent@123456", "name": "Sales Agent", "role": "employee" }
+    ],
+    "sources": [
+      { "name": "Facebook Ads",   "order": 1 },
+      { "name": "Instagram Ads",  "order": 2 },
+      { "name": "Website Form",   "order": 3 },
+      { "name": "Referral",       "order": 4 },
+      { "name": "WhatsApp",       "order": 5 },
+      { "name": "LinkedIn",       "order": 6 },
+      { "name": "Cold Outreach",  "order": 7 },
+      { "name": "Manual Entry",   "order": 8 }
+    ]
+  }
+}
