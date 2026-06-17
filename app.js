@@ -526,7 +526,7 @@ function renderDashboard() {
         <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Hot Leads</p><h2 class="stat-card__value">${hotLeads}</h2><p class="stat-card__trend trend-up">Ready to close</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.hot}">${statIcons.hot}</div></div>
         <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Follow Ups</p><h2 class="stat-card__value">${followUps}</h2><p class="stat-card__trend trend-up">Pending</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.followup}">${statIcons.followup}</div></div>
         <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Won Deals</p><h2 class="stat-card__value">${wonDeals}</h2><p class="stat-card__trend trend-up">Closed won</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.won}">${statIcons.won}</div></div>
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Lost Deals</p><h2 class="stat-card__value">${lostDeals}</h2><p class="stat-card__trend trend-up">Closed lost</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.lost}">${statIcons.lost}</div></div>
+        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Lost Deals</p><h2 class="stat-card__value">${lostDeals}</h2><p class="stat-card__trend trend-down">Closed lost</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.lost}">${statIcons.lost}</div></div>
         <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Deals Value</p><h2 class="stat-card__value">$${dealsValue.toLocaleString()}</h2><p class="stat-card__trend trend-up">Total revenue</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.value}">${statIcons.value}</div></div>
       </div>
       <div class="dashboard-grid">
@@ -1294,7 +1294,7 @@ function renderTasks() {
     const c = customers.find(x => x.id === t.customerId);
     const stsOpts = ["todo","in_progress","done","overdue"].map(s => `<div class="ied-opt${t.status===s?' ied-opt--sel':''}" onclick="event.stopPropagation();inlineEditTask(${t.id},'status','${s}')">${s}</div>`).join('');
     const priOpts = [{key:"low",label:"Low"},{key:"medium",label:"Medium"},{key:"high",label:"High"},{key:"urgent",label:"Urgent"}].map(p => `<div class="ied-opt${t.priority===p.key?' ied-opt--sel':''}" onclick="event.stopPropagation();inlineEditTask(${t.id},'priority','${p.key}')">${p.label}</div>`).join('');
-    return `<tr${t._over?' style="background:#FEF2F2"':''} onclick="showTaskDetail(${t.id})"><td><strong>${t.title}</strong></td><td>${c?c.fullName:'—'}</td><td>${t.assigneeName||'—'}</td>
+    return `<tr class="${t._over?'task-overdue':''}" onclick="showTaskDetail(${t.id})"><td><strong>${t.title}</strong></td><td>${c?c.fullName:'—'}</td><td>${t.assigneeName||'—'}</td>
       <td class="ied-cell" onclick="event.stopPropagation()"><span class="ied-val"${t._over?' style="color:#EF4444;font-weight:600"':''}>${t._over?'Overdue':t.status}</span><div class="ied-drop">${stsOpts}</div></td>
       <td class="ied-cell" onclick="event.stopPropagation()"><span class="ied-val" style="color:${priColors[t.priority]||'#6B7280'};font-weight:600">${t.priority}</span><div class="ied-drop">${priOpts}</div></td>
       <td${t._over?' style="color:#EF4444;font-weight:600"':''}>${t.dueDate||'—'}</td>
