@@ -20,12 +20,30 @@ const DEMO_USERS = [
 ];
 
 function getSession() {
+  // Try PB first
+  if (typeof pbIsAuth === 'function' && pbIsAuth()) {
+    const u = pbGetUser();
+    return u ? { name: u.name, email: u.email, role: u.role, avatar: (u.name||'?')[0] } : null;
+  }
   const raw = sessionStorage.getItem("sh_sess");
   if (!raw) return null;
   try { return JSON.parse(raw); } catch (e) { return null; }
 }
 function isAuth() { return getSession() !== null; }
-function loginUser(email, pw) {
+async function loginUser(email, pw) {
+  // Try PocketBase first (always, even if dataSource not yet set)
+  if (typeof pbLogin === 'function') {
+    try {
+      const record = await PB.login(email, pw);
+      dataSource = "pb";
+      const s = { name: record.name, email: record.email, role: record.role, avatar: (record.name||'?')[0] };
+      sessionUser = s;
+      return s;
+    } catch (e) {
+      // PB failed, fall through to demo users
+    }
+  }
+  // Fallback to demo users
   const u = DEMO_USERS.find(x => x.email === email);
   if (!u || u.password !== pw) throw new Error("Invalid email or password");
   const s = { name: u.name, email: u.email, role: u.role, avatar: u.avatar };
@@ -36,46 +54,20 @@ function loginUser(email, pw) {
 function logoutUser() {
   sessionStorage.removeItem("sh_sess");
   sessionUser = null;
+  if (typeof pbLogout === 'function') pbLogout();
   location.reload();
 }
 
 /* === DATA LAYER === */
 function loadData() {
-  const storedCustomers = localStorage.getItem(STORAGE_KEYS.CUSTOMERS);
-  const storedActivity = localStorage.getItem(STORAGE_KEYS.ACTIVITY);
-  const storedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-
-  if (storedCustomers) {
-    customers = JSON.parse(storedCustomers);
-  } else {
-    customers = JSON.parse(JSON.stringify(SAMPLE_CUSTOMERS));
-    localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
-  }
-
-  if (storedActivity) {
-    activityLog = JSON.parse(storedActivity);
-  } else {
-    activityLog = JSON.parse(JSON.stringify(SAMPLE_ACTIVITY));
-    localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(activityLog));
-  }
-
-  if (storedSettings) {
-    settings = JSON.parse(storedSettings);
-  } else {
-    settings = { theme: "light" };
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-  }
-  applyTheme();
+  loadDataLocal();
 }
 
 function saveData() {
-  localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(customers));
-  localStorage.setItem(STORAGE_KEYS.ACTIVITY, JSON.stringify(activityLog));
-  localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-  localStorage.setItem("saleshub_tasks", JSON.stringify(tasks));
+  saveDataLocal();
 }
 
-function addActivity(type, customerName, description) {
+function addActivity(type, customerName, description, customerId) {
   const activity = {
     id: "act_" + Date.now(),
     type: type,
@@ -85,11 +77,21 @@ function addActivity(type, customerName, description) {
   };
   activityLog.unshift(activity);
   saveData();
+  // Async sync to PocketBase (fire-and-forget)
+  if (dataSource === "pb") {
+    PB.addActivity(type, customerName, description, customerId || null).catch(function(e) {
+      console.error("PB addActivity sync failed:", e && e.message ? e.message : e);
+    });
+  }
 }
 
 /* === MODAL === */
 function generateId(prefix) {
   return prefix + "_" + Date.now();
+}
+
+function setLifecycle(customer) {
+  customer.lifecycle = (typeof LIFECYCLE_MAP !== 'undefined' && LIFECYCLE_MAP[customer.status]) || "lead";
 }
 
 function showCustomerModal(customer = null) {
@@ -226,6 +228,7 @@ function handleModalSubmit(existingCustomer) {
     existingCustomer.company = company;
     existingCustomer.source = source;
     existingCustomer.status = status;
+    setLifecycle(existingCustomer);
     existingCustomer.lastContactDate = lastContact || new Date().toISOString().split('T')[0];
     existingCustomer.nextFollowUpDate = nextFollowUp || null;
     addActivity("status_change", name, "profile updated");
@@ -240,6 +243,7 @@ function handleModalSubmit(existingCustomer) {
       company: company,
       source: source,
       status: status,
+      lifecycle: (typeof LIFECYCLE_MAP !== 'undefined' && LIFECYCLE_MAP[status]) || "lead",
       notes: [],
       dealValue: null,
       productPurchased: null,
@@ -938,6 +942,7 @@ function changeCustomerStatus(customerId, newStatus) {
   if (!customer) return;
   const oldStatus = customer.status;
   customer.status = newStatus;
+  setLifecycle(customer);
   addActivity("status_change", customer.fullName, `moved from ${oldStatus} to ${newStatus}`);
   saveData();
   showToast("Status updated", "success");
@@ -1143,6 +1148,10 @@ function setTheme(theme) {
   saveData();
   applyTheme();
   renderSettings();
+  // Sync theme to PB
+  if (dataSource === "pb") {
+    saveSettingPB('theme', theme).catch(function(){});
+  }
 }
 
 function applyTheme() {
@@ -1269,13 +1278,26 @@ function showLogin(msg) {
   const btn = document.getElementById('login-btn');
   const fe = document.getElementById('login-field-error');
 
-  function handle() {
+  async function handle() {
     fe.textContent = ''; fe.classList.remove('visible');
     const em = emailEl.value.trim(), pw = passEl.value;
     if (!em) { fe.textContent = 'Email required'; fe.classList.add('visible'); return; }
     if (!pw) { fe.textContent = 'Password required'; fe.classList.add('visible'); return; }
     try {
-      loginUser(em, pw);
+      await loginUser(em, pw);
+      // Reload data from PB if available
+      if (dataSource === "pb") {
+        await Promise.all([
+          loadCustomersFromPB(),
+          loadActivityFromPB(),
+          loadTasksFromPB(),
+          syncSettingsFromPB(),
+        ]);
+        // Safety: if PB returned empty, fall back to localStorage
+        if (customers.length === 0) {
+          loadDataLocal();
+        }
+      }
       overlay.remove();
       document.getElementById('app').style.display = 'flex';
       renderSidebar(); renderTopbar(); router();
@@ -1577,8 +1599,8 @@ function router() {
 }
 
 window.addEventListener("hashchange", router);
-window.addEventListener("DOMContentLoaded", () => {
-  loadData();
+window.addEventListener("DOMContentLoaded", async () => {
+  await initDataLayer();
   loadNotifications();
 
   // Load tasks from localStorage (or use sample if none)
