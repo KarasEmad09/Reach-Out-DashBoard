@@ -1470,12 +1470,22 @@ body.modal-open #modal-overlay {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #B45309;
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 .theme-toggle-orb svg {
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: absolute;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+}
+.theme-toggle-sun {
+  opacity: 1;
+  transform: rotate(0deg);
+  color: #B45309;
+}
+.theme-toggle-moon {
+  opacity: 0;
+  transform: rotate(-90deg);
+  color: #4338CA;
 }
 body.dark-mode #theme-toggle {
   background: linear-gradient(135deg, #6366F1, #4F46E5);
@@ -1485,7 +1495,14 @@ body.dark-mode #theme-toggle:hover {
 }
 body.dark-mode .theme-toggle-orb {
   transform: translateX(26px);
-  color: #4338CA;
+}
+body.dark-mode .theme-toggle-sun {
+  opacity: 0;
+  transform: rotate(90deg);
+}
+body.dark-mode .theme-toggle-moon {
+  opacity: 1;
+  transform: rotate(0deg);
 }
 body.dark-mode .theme-toggle-orb svg {
   transform: rotate(180deg);
