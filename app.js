@@ -77,12 +77,25 @@ function addActivity(type, customerName, description, customerId) {
   };
   activityLog.unshift(activity);
   saveData();
+  // Create a notification for this activity
+  createNotif(description || (customerName + " — " + type));
   // Async sync to PocketBase (fire-and-forget)
   if (dataSource === "pb") {
     PB.addActivity(type, customerName, description, customerId || null).catch(function(e) {
       console.error("PB addActivity sync failed:", e && e.message ? e.message : e);
     });
   }
+}
+
+function createNotif(message) {
+  notifications.unshift({
+    id: Date.now(),
+    message: message,
+    isRead: false,
+    timestamp: new Date().toISOString()
+  });
+  saveNotifications();
+  updateNotifBadge();
 }
 
 /* === MODAL === */
@@ -113,38 +126,47 @@ function showCustomerModal(customer = null) {
             <label class="form-label">Full Name *</label>
             <input type="text" id="modal-name" class="form-input" placeholder="Enter full name" value="${isEdit ? customer.fullName : ""}">
             <span id="modal-name-error" class="form-error">Name is required</span>
+            <span id="modal-name-number-error" class="form-error">Name must not contain numbers</span>
+            <span id="modal-name-duplicate-error" class="form-error">A customer with this name already exists</span>
           </div>
           <div class="form-group">
-            <label class="form-label">Phone *</label>
-            <input type="text" id="modal-phone" class="form-input" placeholder="+20 1XX XXX XXXX" value="${isEdit ? customer.phone : ""}">
-            <span id="modal-phone-error" class="form-error">Phone is required</span>
+            <label class="form-label">Phone (digits only) *</label>
+            <input type="text" id="modal-phone" class="form-input" placeholder="e.g. 201234567890" value="${isEdit ? customer.phone : ""}">
+            <span id="modal-phone-error" class="form-error">Phone or Email is required</span>
+            <span id="modal-phone-digit-error" class="form-error">Phone must be digits only</span>
           </div>
           <div class="form-group">
-            <label class="form-label">Email</label>
+            <label class="form-label">Email *</label>
             <input type="email" id="modal-email" class="form-input" placeholder="email@example.com" value="${isEdit && customer.email ? customer.email : ""}">
+            <span id="modal-email-error" class="form-error">Email or Phone is required</span>
+            <span id="modal-email-format-error" class="form-error">Enter a valid email address</span>
           </div>
           <div class="form-group">
             <label class="form-label">Company</label>
-            <input type="text" id="modal-company" class="form-input" placeholder="Company name" value="${isEdit && customer.company ? customer.company : ""}">
+            <input type="text" id="modal-company" class="form-input" placeholder="Company name (optional)" value="${isEdit && customer.company ? customer.company : ""}">
           </div>
           <div class="form-row">
             <div class="form-group form-group-half">
-              <label class="form-label">Source</label>
+              <label class="form-label">Source *</label>
               <select id="modal-source" class="form-select">${sourceOptions}</select>
+              <span id="modal-source-error" class="form-error">Source is required</span>
             </div>
             <div class="form-group form-group-half">
-              <label class="form-label">Status</label>
+              <label class="form-label">Status *</label>
               <select id="modal-status" class="form-select">${statusOptions}</select>
+              <span id="modal-status-error" class="form-error">Status is required</span>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group form-group-half">
-              <label class="form-label">Last Contact Date</label>
+              <label class="form-label">Last Contact Date *</label>
               <input type="date" id="modal-last-contact" class="form-input" value="${isEdit && customer.lastContactDate ? customer.lastContactDate : ""}">
+              <span id="modal-last-contact-error" class="form-error">Last Contact Date is required</span>
             </div>
             <div class="form-group form-group-half">
-              <label class="form-label">Next Follow Up Date</label>
+              <label class="form-label">Next Follow Up Date *</label>
               <input type="date" id="modal-next-followup" class="form-input" value="${isEdit && customer.nextFollowUpDate ? customer.nextFollowUpDate : ""}">
+              <span id="modal-next-followup-error" class="form-error">Next Follow Up is required</span>
             </div>
           </div>
           <div class="form-group" id="modal-notes-group" ${isEdit ? 'style="display:none"' : ""}>
@@ -205,19 +227,73 @@ function handleModalSubmit(existingCustomer) {
 
   // Validate
   const nameError = document.getElementById('modal-name-error');
+  const nameNumberError = document.getElementById('modal-name-number-error');
+  const nameDuplicateError = document.getElementById('modal-name-duplicate-error');
   const phoneError = document.getElementById('modal-phone-error');
+  const phoneDigitError = document.getElementById('modal-phone-digit-error');
+  const emailError = document.getElementById('modal-email-error');
+  const emailFormatError = document.getElementById('modal-email-format-error');
+  const statusError = document.getElementById('modal-status-error');
+  const sourceError = document.getElementById('modal-source-error');
+  const lastContactError = document.getElementById('modal-last-contact-error');
+  const nextFollowupError = document.getElementById('modal-next-followup-error');
   nameError.classList.remove('visible');
+  nameNumberError.classList.remove('visible');
+  nameDuplicateError.classList.remove('visible');
   phoneError.classList.remove('visible');
+  phoneDigitError.classList.remove('visible');
+  emailError.classList.remove('visible');
+  emailFormatError.classList.remove('visible');
+  statusError.classList.remove('visible');
+  sourceError.classList.remove('visible');
+  lastContactError.classList.remove('visible');
+  nextFollowupError.classList.remove('visible');
 
   let hasError = false;
+
   if (!name) {
     nameError.classList.add('visible');
     hasError = true;
-  }
-  if (!phone) {
-    phoneError.classList.add('visible');
+  } else if (/\d/.test(name)) {
+    nameNumberError.classList.add('visible');
+    hasError = true;
+  } else if (!existingCustomer && customers.some(c => c.fullName.toLowerCase() === name.toLowerCase())) {
+    nameDuplicateError.classList.add('visible');
     hasError = true;
   }
+
+  if (!phone && !email) {
+    phoneError.classList.add('visible');
+    emailError.classList.add('visible');
+    hasError = true;
+  }
+  if (phone && !/^\d+$/.test(phone)) {
+    phoneDigitError.classList.add('visible');
+    hasError = true;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    emailFormatError.classList.add('visible');
+    hasError = true;
+  }
+
+  if (!status) {
+    statusError.classList.add('visible');
+    hasError = true;
+  }
+  if (!source) {
+    sourceError.classList.add('visible');
+    hasError = true;
+  }
+
+  if (!lastContact) {
+    lastContactError.classList.add('visible');
+    hasError = true;
+  }
+  if (!nextFollowUp) {
+    nextFollowupError.classList.add('visible');
+    hasError = true;
+  }
+
   if (hasError) return;
 
   if (existingCustomer) {
@@ -231,7 +307,7 @@ function handleModalSubmit(existingCustomer) {
     setLifecycle(existingCustomer);
     existingCustomer.lastContactDate = lastContact || new Date().toISOString().split('T')[0];
     existingCustomer.nextFollowUpDate = nextFollowUp || null;
-    addActivity("status_change", name, "profile updated");
+    addActivity("status_change", name, name + " profile updated");
     showToast("Customer updated", "success");
   } else {
     // Add mode
@@ -260,7 +336,7 @@ function handleModalSubmit(existingCustomer) {
       });
     }
     customers.push(newCustomer);
-    addActivity("new_customer", name, "added as new lead");
+    addActivity("new_customer", name, "New customer " + name + " added");
     showToast("Customer created", "success");
   }
 
@@ -312,6 +388,7 @@ function renderSidebar() {
         <ul class="submenu">
           <li class="nav-item nav-child" data-route="#deals-won"><span>Won Deals</span></li>
           <li class="nav-item nav-child" data-route="#deals-lost"><span>Lost Deals</span></li>
+          <li class="nav-item nav-child" data-route="#deals-values"><span>Deal Values</span></li>
         </ul>
       </li>
       <li class="sidebar-divider"></li>
@@ -327,10 +404,6 @@ function renderSidebar() {
       <li class="nav-item" data-route="#reports">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span>Reports</span>
-      </li>
-      <li class="nav-item" data-route="#settings">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Settings</span>
       </li>
     </ul>
     <div class="sidebar-collapse-btn" onclick="toggleSidebar()">
@@ -399,6 +472,15 @@ function renderTopbar() {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="notif-badge" style="display:none" id="notif-count"></span>
       </button>
+      <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <span class="theme-toggle-orb">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="12" r="2.5"/>
+            <path d="M9 5v1.5M9 17.5V19M5.5 9H7M12.5 9H14"/>
+            <path d="M17 5a7 7 0 0 1 0 14 5 5 0 0 0 0-14z" fill="currentColor" opacity="0.4"/>
+          </svg>
+        </span>
+      </button>
       <div class="user-avatar" onclick="logoutUser()" title="Sign out">${s.avatar}</div>
     </div>
   `;
@@ -442,7 +524,7 @@ function deleteCustomer(id) {
   if (!confirm("Delete this customer? This cannot be undone.")) return;
   const customer = customers.find(c => c.id === id);
   customers = customers.filter(c => c.id !== id);
-  if (customer) addActivity("status_change", customer.fullName, "was deleted");
+  if (customer) addActivity("status_change", customer.fullName, customer.fullName + " was deleted");
   saveData();
   showToast("Customer deleted", "success");
   router();
@@ -531,14 +613,14 @@ function renderDashboard() {
   content.innerHTML = `
     <div class="dashboard">
       <div class="stat-cards">
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Total Customers</p><h2 class="stat-card__value">${total}</h2><p class="stat-card__trend trend-up">+${newLeads} new this month</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.total}">${statIcons.total}</div></div>
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">New Leads</p><h2 class="stat-card__value">${newLeads}</h2><p class="stat-card__trend trend-up">Active leads</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.new}">${statIcons.new}</div></div>
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Interested</p><h2 class="stat-card__value">${interested}</h2><p class="stat-card__trend trend-up">In pipeline</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.interested}">${statIcons.interested}</div></div>
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Hot Leads</p><h2 class="stat-card__value">${hotLeads}</h2><p class="stat-card__trend trend-up">Ready to close</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.hot}">${statIcons.hot}</div></div>
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Follow Ups</p><h2 class="stat-card__value">${followUps}</h2><p class="stat-card__trend trend-up">Pending</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.followup}">${statIcons.followup}</div></div>
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Won Deals</p><h2 class="stat-card__value">${wonDeals}</h2><p class="stat-card__trend trend-up">Closed won</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.won}">${statIcons.won}</div></div>
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Lost Deals</p><h2 class="stat-card__value">${lostDeals}</h2><p class="stat-card__trend trend-down">Closed lost</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.lost}">${statIcons.lost}</div></div>
-        <div class="stat-card"><div class="stat-card__left"><p class="stat-card__label">Deals Value</p><h2 class="stat-card__value">$${dealsValue.toLocaleString()}</h2><p class="stat-card__trend trend-up">Total revenue</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.value}">${statIcons.value}</div></div>
+        <div class="stat-card stat-card--clickable" onclick="window.location.hash='#customers-all'"><div class="stat-card__left"><p class="stat-card__label">Total Customers</p><h2 class="stat-card__value">${total}</h2><p class="stat-card__trend trend-up">+${newLeads} new this month</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.total}">${statIcons.total}</div></div>
+        <div class="stat-card stat-card--clickable" onclick="window.location.hash='#customers-new-leads'"><div class="stat-card__left"><p class="stat-card__label">New Leads</p><h2 class="stat-card__value">${newLeads}</h2><p class="stat-card__trend trend-up">Active leads</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.new}">${statIcons.new}</div></div>
+        <div class="stat-card stat-card--clickable" onclick="window.location.hash='#customers-interested'"><div class="stat-card__left"><p class="stat-card__label">Interested</p><h2 class="stat-card__value">${interested}</h2><p class="stat-card__trend trend-up">In pipeline</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.interested}">${statIcons.interested}</div></div>
+        <div class="stat-card stat-card--clickable" onclick="window.location.hash='#customers-hot-leads'"><div class="stat-card__left"><p class="stat-card__label">Hot Leads</p><h2 class="stat-card__value">${hotLeads}</h2><p class="stat-card__trend trend-up">Ready to close</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.hot}">${statIcons.hot}</div></div>
+        <div class="stat-card stat-card--clickable" onclick="window.location.hash='#customers-follow-ups'"><div class="stat-card__left"><p class="stat-card__label">Follow Ups</p><h2 class="stat-card__value">${followUps}</h2><p class="stat-card__trend trend-up">Pending</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.followup}">${statIcons.followup}</div></div>
+        <div class="stat-card stat-card--clickable" onclick="window.location.hash='#deals-won'"><div class="stat-card__left"><p class="stat-card__label">Won Deals</p><h2 class="stat-card__value">${wonDeals}</h2><p class="stat-card__trend trend-up">Closed won</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.won}">${statIcons.won}</div></div>
+        <div class="stat-card stat-card--clickable" onclick="window.location.hash='#deals-lost'"><div class="stat-card__left"><p class="stat-card__label">Lost Deals</p><h2 class="stat-card__value">${lostDeals}</h2><p class="stat-card__trend trend-down">Closed lost</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.lost}">${statIcons.lost}</div></div>
+        <div class="stat-card stat-card--clickable" onclick="window.location.hash='#deals-values'"><div class="stat-card__left"><p class="stat-card__label">Deals Value</p><h2 class="stat-card__value">$${dealsValue.toLocaleString()}</h2><p class="stat-card__trend trend-up">Total revenue</p></div><div class="stat-card__icon-wrap" style="background:${iconBgColors.value}">${statIcons.value}</div></div>
       </div>
       <div class="dashboard-grid">
         <div class="dashboard-panel activity-panel">
@@ -807,6 +889,48 @@ function renderLostDeals() {
   });
 }
 
+/* === DEAL VALUES PAGE === */
+function renderDealValues() {
+  const wonCustomers = customers.filter(c => c.status === "Won Deal" && c.dealValue);
+  const totalValue = wonCustomers.reduce((sum, c) => sum + (c.dealValue || 0), 0);
+  const avgValue = wonCustomers.length > 0 ? Math.round(totalValue / wonCustomers.length) : 0;
+  const maxValue = wonCustomers.length > 0 ? Math.max(...wonCustomers.map(c => c.dealValue || 0)) : 0;
+  const minValue = wonCustomers.length > 0 ? Math.min(...wonCustomers.map(c => c.dealValue || 0)) : 0;
+  const maxBar = maxValue > 0 ? maxValue : 1;
+
+  const rows = wonCustomers.length > 0 ? wonCustomers.map(c => {
+    const pct = Math.round(((c.dealValue || 0) / maxBar) * 100);
+    return `<tr onclick="window.location.hash='#customer/${c.id}'" style="cursor:pointer">
+      <td><div class="td-with-avatar">${renderAvatarCircle(c.fullName)}<span>${c.fullName}</span></div></td>
+      <td>${c.company || '—'}</td>
+      <td>${c.productPurchased || '—'}</td>
+      <td><div class="dv-bar-wrap"><div class="dv-bar" style="width:${pct}%"></div></div></td>
+      <td><strong style="color:var(--color-trend-up)">$${(c.dealValue || 0).toLocaleString()}</strong></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--color-text-muted);padding:32px">No won deals with values yet.</td></tr>';
+
+  document.getElementById('content').innerHTML = `
+    <div class="dv-hero">
+      <div class="dv-hero__label">Total Revenue from Won Deals</div>
+      <div class="dv-hero__value">$${totalValue.toLocaleString()}</div>
+      <div class="dv-hero__sub">${wonCustomers.length} deal${wonCustomers.length !== 1 ? 's' : ''} closed</div>
+    </div>
+    <div class="dv-stats">
+      <div class="dv-stat"><span class="dv-stat__label">Average Deal</span><span class="dv-stat__num">$${avgValue.toLocaleString()}</span></div>
+      <div class="dv-stat"><span class="dv-stat__label">Largest Deal</span><span class="dv-stat__num">$${maxValue.toLocaleString()}</span></div>
+      <div class="dv-stat"><span class="dv-stat__label">Smallest Deal</span><span class="dv-stat__num">$${minValue.toLocaleString()}</span></div>
+      <div class="dv-stat"><span class="dv-stat__label">Total Deals</span><span class="dv-stat__num">${wonCustomers.length}</span></div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Customer</th><th>Company</th><th>Product</th><th>Share</th><th>Deal Value</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 /* === CUSTOMER DETAIL PAGE === */
 function renderCustomerDetail(id) {
   const customer = customers.find(c => c.id === id);
@@ -943,7 +1067,7 @@ function changeCustomerStatus(customerId, newStatus) {
   const oldStatus = customer.status;
   customer.status = newStatus;
   setLifecycle(customer);
-  addActivity("status_change", customer.fullName, `moved from ${oldStatus} to ${newStatus}`);
+  addActivity("status_change", customer.fullName, customer.fullName + " moved from " + oldStatus + " to " + newStatus);
   saveData();
   showToast("Status updated", "success");
   renderCustomerDetail(customerId);
@@ -956,7 +1080,7 @@ function addNote(customerId) {
   if (!customer) return;
   if (!customer.notes) customer.notes = [];
   customer.notes.unshift({ id: generateId("note"), text, createdAt: new Date().toISOString() });
-  addActivity("note_added", customer.fullName, "added a note");
+  addActivity("note_added", customer.fullName, "A note was added to " + customer.fullName);
   saveData();
   showToast("Note added", "success");
   renderCustomerDetail(customerId);
@@ -1096,7 +1220,7 @@ function showNoteQuestionModal(type) {
     if (!customer) { showToast('Customer not found', 'error'); return; }
     if (!customer.notes) customer.notes = [];
     customer.notes.unshift({ id: Date.now(), text, type, createdAt: new Date().toISOString() });
-    addActivity(type + '_added', customer.fullName, `added a ${type}`);
+    addActivity(type + '_added', customer.fullName, "A " + type + " was added to " + customer.fullName);
     saveData();
     closeModal();
     renderNotes();
@@ -1104,50 +1228,14 @@ function showNoteQuestionModal(type) {
   });
 }
 
-/* === SETTINGS PAGE === */
-function renderSettings() {
-  const currentTheme = settings.theme || "light";
-  const content = document.getElementById('content');
-  content.innerHTML = `
-    <div class="page-header">
-      <div class="page-header-left">
-        <h2>Settings</h2>
-      </div>
-    </div>
-    <div class="settings-section">
-      <h3>Appearance</h3>
-      <p class="settings-desc">Choose your preferred theme for the dashboard.</p>
-      <div class="theme-cards">
-        <div class="theme-card ${currentTheme === 'light' ? 'theme-card--active' : ''}" onclick="setTheme('light')">
-          <div class="theme-card-preview theme-card-preview--light">
-            <div class="theme-preview-sidebar"></div>
-            <div class="theme-preview-content">
-              <div class="theme-preview-bar"></div>
-              <div class="theme-preview-card"></div>
-            </div>
-          </div>
-          <span class="theme-card-label">Light Mode</span>
-        </div>
-        <div class="theme-card ${currentTheme === 'dark' ? 'theme-card--active' : ''}" onclick="setTheme('dark')">
-          <div class="theme-card-preview theme-card-preview--dark">
-            <div class="theme-preview-sidebar"></div>
-            <div class="theme-preview-content">
-              <div class="theme-preview-bar"></div>
-              <div class="theme-preview-card"></div>
-            </div>
-          </div>
-          <span class="theme-card-label">Dark Mode</span>
-        </div>
-      </div>
-    </div>
-  `;
+/* === THEME === */
+function toggleTheme() {
+  setTheme(settings.theme === 'dark' ? 'light' : 'dark');
 }
-
 function setTheme(theme) {
   settings.theme = theme;
   saveData();
   applyTheme();
-  renderSettings();
   // Sync theme to PB
   if (dataSource === "pb") {
     saveSettingPB('theme', theme).catch(function(){});
@@ -1395,7 +1483,7 @@ function handleTaskSubmit() {
   if (editTask) {
     Object.assign(editTask, data);
     editTask.updatedAt = new Date().toISOString();
-    addActivity("task_update", editTask.title || "Task", "updated");
+    addActivity("task_update", editTask.title || "Task", "Task \u201c" + (editTask.title || "Task") + "\u201d updated");
     saveData();
     showToast('Task updated', 'success');
   } else {
@@ -1420,7 +1508,7 @@ function toggleTaskDone(id, checked) {
   if (!t) return;
   t.status = checked ? 'done' : 'todo';
   t.updatedAt = new Date().toISOString();
-  addActivity("status_change", t.title, checked ? "task marked done" : "task reopened");
+  addActivity("status_change", t.title, checked ? "Task \u201c" + t.title + "\u201d marked done" : "Task \u201c" + t.title + "\u201d reopened");
   saveData();
   showToast(checked ? 'Task completed' : 'Task reopened', 'success');
   renderTasks();
@@ -1454,7 +1542,7 @@ function confirmInlineEdit() {
   const t = tasks.find(x => x.id === pendingInlineEdit.taskId);
   if (!t) return;
   if (pendingInlineEdit.field === 'status') {
-    addActivity("status_change", t.title, `task status changed to ${pendingInlineEdit.newValue}`);
+    addActivity("status_change", t.title, "Task \u201c" + t.title + "\u201d status changed to " + pendingInlineEdit.newValue);
   }
   t[pendingInlineEdit.field] = pendingInlineEdit.newValue;
   t.updatedAt = new Date().toISOString();
@@ -1534,8 +1622,8 @@ const PAGE_NAMES = {
   "#customers-follow-ups": "Follow Ups",
   "#deals-won": "Won Deals",
   "#deals-lost": "Lost Deals",
+  "#deals-values": "Deal Values",
   "#notes": "Notes & Questions",
-  "#settings": "Settings",
   "#tasks": "Tasks",
   "#reports": "Reports"
 };
@@ -1549,8 +1637,8 @@ const ROUTES = {
   "#customers-follow-ups": renderFollowUps,
   "#deals-won": renderWonDeals,
   "#deals-lost": renderLostDeals,
+  "#deals-values": renderDealValues,
   "#notes": renderNotes,
-  "#settings": renderSettings,
   "#tasks": renderTasks,
   "#reports": renderReports
 };
@@ -1567,7 +1655,7 @@ function router() {
       chartInstance = null;
     }
     const titleEl = document.getElementById('page-title');
-    if (titleEl) titleEl.textContent = "Customer Detail";
+    if (titleEl) titleEl.textContent = "Customer Details";
     updateSidebarActive("");
     renderCustomerDetail(id);
     return;
