@@ -965,7 +965,7 @@ function addNote(customerId) {
 function deleteNote(customerId, noteId) {
   const customer = customers.find(c => c.id === customerId);
   if (!customer) return;
-  customer.notes = (customer.notes || []).filter(n => n.id !== noteId);
+  customer.notes = (customer.notes || []).filter(n => String(n.id) !== String(noteId));
   saveData();
   showToast("Note deleted", "success");
   renderCustomerDetail(customerId);
