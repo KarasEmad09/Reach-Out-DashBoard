@@ -1,0 +1,2 @@
+Seed skipped: users already exist.
+SalesHub CRM server running on http://localhost:3000

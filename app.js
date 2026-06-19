@@ -13,88 +13,109 @@ let tasks = [];
 let taskSearchQuery = "";
 let taskStatusFilter = "all";
 let taskPriorityFilter = "all";
+let userRole = "agent";
 
 /* === AUTH === */
-const DEMO_USERS = [
-  { email: "admin@saleshub.com", password: "admin123", name: "Super Admin", role: "super_admin", avatar: "SA" }
-];
-
 function getSession() {
-  // Try PB first
-  if (typeof pbIsAuth === 'function' && pbIsAuth()) {
-    const u = pbGetUser();
-    return u ? { name: u.name, email: u.email, role: u.role, avatar: (u.name||'?')[0] } : null;
-  }
   const raw = sessionStorage.getItem("sh_sess");
   if (!raw) return null;
   try { return JSON.parse(raw); } catch (e) { return null; }
 }
 function isAuth() { return getSession() !== null; }
 async function loginUser(email, pw) {
-  // Try PocketBase first (always, even if dataSource not yet set)
-  if (typeof pbLogin === 'function') {
-    try {
-      const record = await PB.login(email, pw);
-      dataSource = "pb";
-      const s = { name: record.name, email: record.email, role: record.role, avatar: (record.name||'?')[0] };
-      sessionUser = s;
-      return s;
-    } catch (e) {
-      // PB failed, fall through to demo users
-    }
+  try {
+    const u = await apiLogin(email, pw);
+    userRole = u.role;
+    return u;
+  } catch (e) {
+    throw new Error("Invalid email or password");
   }
-  // Fallback to demo users
-  const u = DEMO_USERS.find(x => x.email === email);
-  if (!u || u.password !== pw) throw new Error("Invalid email or password");
-  const s = { name: u.name, email: u.email, role: u.role, avatar: u.avatar };
-  sessionStorage.setItem("sh_sess", JSON.stringify(s));
-  sessionUser = s;
-  return s;
 }
-function logoutUser() {
+async function logoutUser() {
+  await apiLogout();
   sessionStorage.removeItem("sh_sess");
   sessionUser = null;
-  if (typeof pbLogout === 'function') pbLogout();
   location.reload();
 }
 
 /* === DATA LAYER === */
-function loadData() {
-  loadDataLocal();
-}
-
-function saveData() {
-  saveDataLocal();
-}
-
-function addActivity(type, customerName, description, customerId) {
-  const activity = {
-    id: "act_" + Date.now(),
-    type: type,
-    customerName: customerName,
-    description: description,
-    timestamp: new Date().toISOString()
-  };
-  activityLog.unshift(activity);
-  saveData();
-  // Create a notification for this activity
-  createNotif(description || (customerName + " — " + type));
-  // Async sync to PocketBase (fire-and-forget)
-  if (dataSource === "pb") {
-    PB.addActivity(type, customerName, description, customerId || null).catch(function(e) {
-      console.error("PB addActivity sync failed:", e && e.message ? e.message : e);
-    });
+async function loadData() {
+  try {
+    const [cust, tsk, ntfs, sett, act] = await Promise.all([
+      apiGetCustomers(), apiGetTasks(), apiGetNotifications(),
+      apiGetSettings(), apiGetActivity().catch(() => [])
+    ]);
+    customers = cust.map(c => ({
+      id: String(c.id),
+      fullName: c.name,
+      email: c.email || '',
+      phone: c.phone || '',
+      company: c.company || '',
+      source: c.source || '',
+      status: c.status,
+      lifecycle: c.lifecycle || 'lead',
+      notes: [],
+      dealValue: c.deal_value || null,
+      productPurchased: c.product_purchased || null,
+      lostReason: c.lost_reason || null,
+      lastContactDate: c.last_contact_date || '',
+      nextFollowUpDate: c.next_follow_up_date || null,
+      createdAt: c.created_at,
+      agent_name: c.agent_name,
+      assigned_agent_id: c.assigned_agent_id ? String(c.assigned_agent_id) : null
+    }));
+    tasks = tsk.map(t => ({
+      id: String(t.id), title: t.title, description: t.description || '',
+      customerId: t.customer_id ? String(t.customer_id) : null,
+      customerName: t.customer_name || '',
+      assignedTo: t.assigned_to ? String(t.assigned_to) : null,
+      assigneeName: t.assignee_name || '',
+      status: t.status, priority: t.priority,
+      dueDate: t.due_date || '', due_date: t.due_date || '',
+      createdAt: t.created_at, updatedAt: t.updated_at,
+      created_by: t.created_by
+    }));
+    notifications = ntfs.map(n => ({
+      id: n.id, message: n.message, isRead: !!n.is_read,
+      timestamp: n.created_at, created_at: n.created_at
+    }));
+    settings = sett || {};
+    activityLog = (act || []).map(a => ({
+      id: "act_" + a.id,
+      type: a.action,
+      customerName: a.details ? (JSON.parse(a.details || '{}').name || '') : '',
+      description: a.target_table + ' ' + a.action,
+      timestamp: a.created_at,
+      user_name: a.user_name
+    }));
+    if (settings.theme) applyTheme();
+  } catch (e) {
+    console.error("Failed to load data from API:", e);
   }
 }
 
-function createNotif(message) {
-  notifications.unshift({
-    id: Date.now(),
-    message: message,
-    isRead: false,
+function saveData() {
+  // No-op: backend handles persistence
+}
+
+async function addActivity(type, customerName, description, customerId) {
+  // The backend logActivity is called by the API routes on write operations.
+  // For frontend-only activity tracking, we add to the local log.
+  activityLog.unshift({
+    id: "act_" + Date.now(),
+    type, customerName, description,
     timestamp: new Date().toISOString()
   });
-  saveNotifications();
+}
+
+function createNotif(message) {
+  // Notifications are now created server-side on API write ops.
+  // This local fallback updates the badge.
+  notifications.unshift({
+    id: Date.now(), message, isRead: false,
+    created_at: new Date().toISOString()
+  });
+  try { apiCreateNote && console.log('Notif created server-side'); } catch(e) {}
   updateNotifBadge();
 }
 
@@ -107,12 +128,23 @@ function setLifecycle(customer) {
   customer.lifecycle = (typeof LIFECYCLE_MAP !== 'undefined' && LIFECYCLE_MAP[customer.status]) || "lead";
 }
 
-function showCustomerModal(customer = null) {
+async function showCustomerModal(customer = null) {
   const isEdit = customer !== null;
   const title = isEdit ? "Edit Customer" : "Add Customer";
   const submitText = isEdit ? "Update Customer" : "Save Customer";
   const sourceOptions = SOURCES.map(s => `<option value="${s}" ${isEdit && customer.source === s ? "selected" : ""}>${s}</option>`).join('');
   const statusOptions = STATUSES.map(s => `<option value="${s.key}" ${isEdit && customer.status === s.key ? "selected" : ""}>${s.key}</option>`).join('');
+
+  // Fetch agents for assignment dropdown
+  let agentOptions = '<option value="">Unassigned</option>';
+  if (userRole !== 'agent') {
+    try {
+      const users = await apiGetUsers();
+      agentOptions += users.filter(u => u.role === 'agent').map(u =>
+        `<option value="${u.id}" ${isEdit && String(customer.assigned_agent_id) === String(u.id) ? 'selected' : ''}>${u.name}</option>`
+      ).join('');
+    } catch (e) {}
+  }
 
   const html = `
     <div class="modal-backdrop">
@@ -145,6 +177,12 @@ function showCustomerModal(customer = null) {
             <label class="form-label">Company</label>
             <input type="text" id="modal-company" class="form-input" placeholder="Company name (optional)" value="${isEdit && customer.company ? customer.company : ""}">
           </div>
+          ${userRole !== 'agent' ? `
+          <div class="form-group">
+            <label class="form-label">Assigned To</label>
+            <select id="modal-assigned" class="form-select">${agentOptions}</select>
+          </div>
+          ` : ''}
           <div class="form-row">
             <div class="form-group form-group-half">
               <label class="form-label">Source *</label>
@@ -168,6 +206,16 @@ function showCustomerModal(customer = null) {
               <input type="date" id="modal-next-followup" class="form-input" value="${isEdit && customer.nextFollowUpDate ? customer.nextFollowUpDate : ""}">
               <span id="modal-next-followup-error" class="form-error">Next Follow Up is required</span>
             </div>
+          </div>
+          <div class="form-group" id="modal-deal-value-group" style="display:none">
+            <label class="form-label">Deal Value *</label>
+            <input type="number" id="modal-deal-value" class="form-input" placeholder="Enter deal value in EGP" min="0" step="1" value="${isEdit && customer.dealValue ? customer.dealValue : ''}">
+            <span id="modal-deal-value-error" class="form-error">Deal value is required for Won Deals</span>
+          </div>
+          <div class="form-group" id="modal-lost-reason-group" style="display:none">
+            <label class="form-label">Lost Reason *</label>
+            <textarea id="modal-lost-reason" class="form-textarea" rows="2" placeholder="Why was this deal lost?">${isEdit && customer.lostReason ? customer.lostReason : ''}</textarea>
+            <span id="modal-lost-reason-error" class="form-error">Lost reason is required for Lost Deals</span>
           </div>
           <div class="form-group" id="modal-notes-group" ${isEdit ? 'style="display:none"' : ""}>
             <label class="form-label">Notes</label>
@@ -200,6 +248,20 @@ function showCustomerModal(customer = null) {
   document.querySelector('.modal-submit').addEventListener('click', () => {
     handleModalSubmit(customer);
   });
+
+  // Show/hide deal value field based on status
+  const statusSelect = document.getElementById('modal-status');
+  const dealGroup = document.getElementById('modal-deal-value-group');
+  function toggleDealValue() {
+    const st = statusSelect.value;
+    dealGroup.style.display = st === 'Won Deal' ? '' : 'none';
+    if (st !== 'Won Deal') document.getElementById('modal-deal-value').value = '';
+    const lostGroup = document.getElementById('modal-lost-reason-group');
+    lostGroup.style.display = st === 'Lost Deal' ? '' : 'none';
+    if (st !== 'Lost Deal') document.getElementById('modal-lost-reason').value = '';
+  }
+  toggleDealValue(); // initial check
+  statusSelect.addEventListener('change', toggleDealValue);
 }
 
 function handleEscapeKey(e) {
@@ -214,7 +276,7 @@ function closeModal() {
   document.removeEventListener('keydown', handleEscapeKey);
 }
 
-function handleModalSubmit(existingCustomer) {
+async function handleModalSubmit(existingCustomer) {
   const name = document.getElementById('modal-name').value.trim();
   const phone = document.getElementById('modal-phone').value.trim();
   const email = document.getElementById('modal-email').value.trim();
@@ -224,6 +286,8 @@ function handleModalSubmit(existingCustomer) {
   const lastContact = document.getElementById('modal-last-contact').value;
   const nextFollowUp = document.getElementById('modal-next-followup').value;
   const notesText = document.getElementById('modal-notes').value.trim();
+  const assignedEl = document.getElementById('modal-assigned');
+  const assignedAgentId = assignedEl ? assignedEl.value || null : null;
 
   // Validate
   const nameError = document.getElementById('modal-name-error');
@@ -237,6 +301,8 @@ function handleModalSubmit(existingCustomer) {
   const sourceError = document.getElementById('modal-source-error');
   const lastContactError = document.getElementById('modal-last-contact-error');
   const nextFollowupError = document.getElementById('modal-next-followup-error');
+  const dealValueError = document.getElementById('modal-deal-value-error');
+  const lostReasonError = document.getElementById('modal-lost-reason-error');
   nameError.classList.remove('visible');
   nameNumberError.classList.remove('visible');
   nameDuplicateError.classList.remove('visible');
@@ -248,6 +314,8 @@ function handleModalSubmit(existingCustomer) {
   sourceError.classList.remove('visible');
   lastContactError.classList.remove('visible');
   nextFollowupError.classList.remove('visible');
+  if (dealValueError) dealValueError.classList.remove('visible');
+  if (lostReasonError) lostReasonError.classList.remove('visible');
 
   let hasError = false;
 
@@ -294,53 +362,78 @@ function handleModalSubmit(existingCustomer) {
     hasError = true;
   }
 
+  const dealValue = document.getElementById('modal-deal-value').value.trim();
+  if (status === 'Won Deal' && !dealValue) {
+    dealValueError.classList.add('visible');
+    hasError = true;
+  }
+
+  const lostReason = document.getElementById('modal-lost-reason').value.trim();
+  if (status === 'Lost Deal' && !lostReason) {
+    lostReasonError.classList.add('visible');
+    hasError = true;
+  }
+
   if (hasError) return;
 
   if (existingCustomer) {
     // Edit mode
-    existingCustomer.fullName = name;
-    existingCustomer.phone = phone;
-    existingCustomer.email = email;
-    existingCustomer.company = company;
-    existingCustomer.source = source;
-    existingCustomer.status = status;
-    setLifecycle(existingCustomer);
-    existingCustomer.lastContactDate = lastContact || new Date().toISOString().split('T')[0];
-    existingCustomer.nextFollowUpDate = nextFollowUp || null;
-    addActivity("status_change", name, name + " profile updated");
-    showToast("Customer updated", "success");
+    try {
+      await apiUpdateCustomer(existingCustomer.id, {
+        name, phone: phone || null, email: email || null, company: company || null,
+        source, status, lastContactDate: lastContact, nextFollowUpDate: nextFollowUp || null,
+        dealValue: status === 'Won Deal' ? parseInt(dealValue) : null,
+        lostReason: status === 'Lost Deal' ? lostReason : null,
+        assigned_agent_id: assignedAgentId ? parseInt(assignedAgentId) : null
+      });
+      existingCustomer.fullName = name;
+      existingCustomer.phone = phone;
+      existingCustomer.email = email;
+      existingCustomer.company = company;
+      existingCustomer.source = source;
+      existingCustomer.status = status;
+      setLifecycle(existingCustomer);
+      existingCustomer.lastContactDate = lastContact || new Date().toISOString().split('T')[0];
+      existingCustomer.nextFollowUpDate = nextFollowUp || null;
+      addActivity("status_change", name, name + " profile updated");
+      showToast("Customer updated", "success");
+    } catch (e) { showToast(e.message, "error"); return; }
   } else {
     // Add mode
-    const newCustomer = {
-      id: generateId("cust"),
-      fullName: name,
-      phone: phone,
-      email: email,
-      company: company,
-      source: source,
-      status: status,
-      lifecycle: (typeof LIFECYCLE_MAP !== 'undefined' && LIFECYCLE_MAP[status]) || "lead",
-      notes: [],
-      dealValue: null,
-      productPurchased: null,
-      lostReason: null,
-      lastContactDate: lastContact || new Date().toISOString().split('T')[0],
-      nextFollowUpDate: nextFollowUp || null,
-      createdAt: new Date().toISOString()
-    };
-    if (notesText) {
-      newCustomer.notes.push({
-        id: generateId("note"),
-        text: notesText,
-        createdAt: new Date().toISOString()
+    try {
+      const result = await apiCreateCustomer({
+        name, phone: phone || null, email: email || null, company: company || null,
+        source, status, lastContactDate: lastContact, nextFollowUpDate: nextFollowUp || null,
+        dealValue: status === 'Won Deal' ? parseInt(dealValue) : null,
+        lostReason: status === 'Lost Deal' ? lostReason : null,
+        assigned_agent_id: assignedAgentId ? parseInt(assignedAgentId) : null
       });
-    }
-    customers.push(newCustomer);
-    addActivity("new_customer", name, "New customer " + name + " added");
-    showToast("Customer created", "success");
+      const newCustomer = {
+        id: String(result.id),
+        fullName: result.name,
+        phone: result.phone || '',
+        email: result.email || '',
+        company: result.company || '',
+        source: result.source || '',
+        status: result.status,
+        lifecycle: result.lifecycle || 'lead',
+        notes: [],
+        dealValue: null,
+        productPurchased: null,
+        lostReason: null,
+        lastContactDate: result.last_contact_date || '',
+        nextFollowUpDate: result.next_follow_up_date || null,
+        createdAt: result.created_at
+      };
+      if (notesText) {
+        newCustomer.notes.push({ id: generateId("note"), text: notesText, createdAt: new Date().toISOString() });
+      }
+      customers.push(newCustomer);
+      addActivity("new_customer", name, "New customer " + name + " added");
+      showToast("Customer created", "success");
+    } catch (e) { showToast(e.message, "error"); return; }
   }
 
-  saveData();
   closeModal();
   router();
 }
@@ -405,6 +498,13 @@ function renderSidebar() {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span>Reports</span>
       </li>
+      ${getSession() && getSession().role !== 'agent' ? `
+      <li class="nav-section-label">PEOPLE</li>
+      <li class="nav-item" data-route="#employees">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Employees</span>
+      </li>
+      ` : ''}
     </ul>
     <div class="sidebar-collapse-btn" onclick="toggleSidebar()">
       <svg class="collapse-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -522,14 +622,16 @@ function getStatusRoute(status) {
   return m[status] || "#customers-all";
 }
 
-function deleteCustomer(id) {
+async function deleteCustomer(id) {
   if (!confirm("Delete this customer? This cannot be undone.")) return;
   const customer = customers.find(c => c.id === id);
-  customers = customers.filter(c => c.id !== id);
-  if (customer) addActivity("status_change", customer.fullName, customer.fullName + " was deleted");
-  saveData();
-  showToast("Customer deleted", "success");
-  router();
+  try {
+    await apiDeleteCustomer(id);
+    customers = customers.filter(c => c.id !== id);
+    if (customer) addActivity("status_change", customer.fullName, customer.fullName + " was deleted");
+    showToast("Customer deleted", "success");
+    router();
+  } catch (e) { showToast(e.message, "error"); }
 }
 
 /* === ROW MENU === */
@@ -773,6 +875,7 @@ function buildTableRows(filtered) {
             <th onclick="sortCustomers('email')">Email ${sortArrow('email')}</th>
             <th onclick="sortCustomers('source')">Source ${sortArrow('source')}</th>
             <th onclick="sortCustomers('status')">Status ${sortArrow('status')}</th>
+            <th>Assigned To</th>
             <th onclick="sortCustomers('lastContactDate')">Last Contact ${sortArrow('lastContactDate')}</th>
             ${extraHeaders}
             <th>Actions</th>
@@ -786,6 +889,7 @@ function buildTableRows(filtered) {
               <td>${c.email || '—'}</td>
               <td>${c.source}</td>
               <td>${renderStatusBadge(c.status)}</td>
+              <td>${c.agent_name || '—'}</td>
               <td>${c.lastContactDate || '—'}</td>
               ${extraCols.map(col => `<td>${col.render(c)}</td>`).join('')}
               <td onclick="event.stopPropagation()">
@@ -830,7 +934,7 @@ function renderCustomerTable(config) {
       <div class="page-header-right">
         <div class="page-search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="customer-search" placeholder="Search customers..." value="${currentSearchQuery}">
+          <input type="text" id="customer-search" placeholder="Search customers..." value="">
         </div>
         <button class="btn-primary" onclick="showCustomerModal()">+ Add Customer</button>
       </div>
@@ -934,7 +1038,7 @@ function renderDealValues() {
 }
 
 /* === CUSTOMER DETAIL PAGE === */
-function renderCustomerDetail(id) {
+async function renderCustomerDetail(id) {
   const customer = customers.find(c => c.id === id);
   if (!customer) {
     document.getElementById('content').innerHTML = `
@@ -945,6 +1049,18 @@ function renderCustomerDetail(id) {
     return;
   }
 
+  // Fetch notes from API
+  let apiNotes = [];
+  try { apiNotes = await apiGetNotes({ customer_id: parseInt(id) }); } catch (e) {}
+
+  const notes = apiNotes.map(n => ({
+    id: String(n.id),
+    text: n.content,
+    type: n.type || 'note',
+    createdAt: n.created_at,
+    author_name: n.author_name || ''
+  })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
   const statusObj = STATUSES.find(s => s.key === customer.status);
   const statusColor = statusObj ? statusObj.color : '#6B7280';
   const statusBg = statusObj ? statusObj.bg : '#F9FAFB';
@@ -952,7 +1068,6 @@ function renderCustomerDetail(id) {
     `<option value="${s.key}" ${customer.status === s.key ? 'selected' : ''}>${s.key}</option>`
   ).join('');
 
-  const notes = (customer.notes || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const notesHtml = notes.length > 0 ? notes.map(note => `
     <div class="note-item">
       <p class="note-text">${note.text}</p>
@@ -1012,6 +1127,10 @@ function renderCustomerDetail(id) {
                 <span class="detail-value">${customer.company || '—'}</span>
               </div>
               <div class="detail-field">
+                <span class="detail-label">Assigned To</span>
+                <span class="detail-value">${customer.agent_name || 'Unassigned'}</span>
+              </div>
+              <div class="detail-field">
                 <span class="detail-label">Source</span>
                 <span class="detail-value">${customer.source}</span>
               </div>
@@ -1063,57 +1182,76 @@ function renderCustomerDetail(id) {
   `;
 }
 
-function changeCustomerStatus(customerId, newStatus) {
+async function changeCustomerStatus(customerId, newStatus) {
   const customer = customers.find(c => c.id === customerId);
   if (!customer) return;
   const oldStatus = customer.status;
-  customer.status = newStatus;
-  setLifecycle(customer);
-  addActivity("status_change", customer.fullName, customer.fullName + " moved from " + oldStatus + " to " + newStatus);
-  saveData();
-  showToast("Status updated", "success");
-  renderCustomerDetail(customerId);
+  try {
+    await apiUpdateCustomer(customerId, { status: newStatus });
+    customer.status = newStatus;
+    setLifecycle(customer);
+    addActivity("status_change", customer.fullName, customer.fullName + " moved from " + oldStatus + " to " + newStatus);
+    showToast("Status updated", "success");
+    renderCustomerDetail(customerId);
+  } catch (e) { showToast(e.message, "error"); }
 }
 
-function addNote(customerId) {
+async function addNote(customerId) {
   const text = document.getElementById('note-input').value.trim();
   if (!text) return;
   const customer = customers.find(c => c.id === customerId);
   if (!customer) return;
-  if (!customer.notes) customer.notes = [];
-  customer.notes.unshift({ id: generateId("note"), text, createdAt: new Date().toISOString() });
-  addActivity("note_added", customer.fullName, "A note was added to " + customer.fullName);
-  saveData();
-  showToast("Note added", "success");
-  renderCustomerDetail(customerId);
+  try {
+    await apiCreateNote({ customer_id: parseInt(customerId), type: 'note', content: text });
+    if (!customer.notes) customer.notes = [];
+    customer.notes.unshift({ id: generateId("note"), text, type: 'note', createdAt: new Date().toISOString() });
+    addActivity("note_added", customer.fullName, "A note was added to " + customer.fullName);
+    showToast("Note added", "success");
+    renderCustomerDetail(customerId);
+  } catch (e) { showToast(e.message, "error"); }
 }
 
-function deleteNote(customerId, noteId) {
+async function deleteNote(customerId, noteId) {
   const customer = customers.find(c => c.id === customerId);
   if (!customer) return;
-  customer.notes = (customer.notes || []).filter(n => String(n.id) !== String(noteId));
-  saveData();
-  showToast("Note deleted", "success");
-  renderCustomerDetail(customerId);
+  try {
+    await apiDeleteNote(noteId);
+    customer.notes = (customer.notes || []).filter(n => String(n.id) !== String(noteId));
+    showToast("Note deleted", "success");
+    renderCustomerDetail(customerId);
+  } catch (e) { showToast(e.message, "error"); }
 }
 
 /* === NOTES PAGE === */
 let notesSearchQuery = "";
 let notesTypeFilter = "all";
+let allNotesCache = [];
+
+async function fetchNotes() {
+  try {
+    const data = await apiGetNotes();
+    allNotesCache = data.map(n => ({
+      id: String(n.id),
+      customerId: String(n.customer_id),
+      customerName: n.customer_name || '',
+      text: n.content,
+      type: n.type || 'note',
+      author_name: n.author_name || '',
+      createdAt: n.created_at
+    }));
+  } catch (e) {
+    allNotesCache = [];
+  }
+}
 
 function getFilteredNotes() {
-  const allNotes = [];
-  customers.forEach(customer => {
-    (customer.notes || []).forEach(note => {
-      allNotes.push({ ...note, customerName: customer.fullName, customerId: customer.id, type: note.type || 'note' });
-    });
-  });
-  allNotes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  return allNotes.filter(n =>
-    (n.customerName.toLowerCase().includes(notesSearchQuery) ||
-    n.text.toLowerCase().includes(notesSearchQuery)) &&
-    (notesTypeFilter === 'all' || n.type === notesTypeFilter)
-  );
+  return allNotesCache
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .filter(n =>
+      (n.customerName.toLowerCase().includes(notesSearchQuery) ||
+       n.text.toLowerCase().includes(notesSearchQuery)) &&
+      (notesTypeFilter === 'all' || n.type === notesTypeFilter)
+    );
 }
 
 function buildNotesFeedHtml(filtered) {
@@ -1148,8 +1286,9 @@ function updateNotesFeed() {
   if (feedEl) feedEl.innerHTML = buildNotesFeedHtml(filtered);
 }
 
-function renderNotes() {
+async function renderNotes() {
   notesSearchQuery = ""; notesTypeFilter = "all";
+  await fetchNotes();
   const filtered = getFilteredNotes();
   const content = document.getElementById('content');
   content.innerHTML = `
@@ -1213,20 +1352,22 @@ function showNoteQuestionModal(type) {
   modal.querySelector('.modal-cancel').addEventListener('click', closeModal);
   modal.querySelector('.modal-backdrop').addEventListener('click', e => { if (e.target.classList.contains('modal-backdrop')) closeModal(); });
   document.addEventListener('keydown', handleEscapeKey);
-  modal.querySelector('.modal-submit').addEventListener('click', () => {
+  modal.querySelector('.modal-submit').addEventListener('click', async () => {
     const custId = document.getElementById('nq-customer').value;
     const text = document.getElementById('nq-text').value.trim();
     if (!custId) { showToast('Select a customer', 'error'); return; }
     if (!text) { showToast('Text is required', 'error'); return; }
     const customer = customers.find(c => c.id === custId);
     if (!customer) { showToast('Customer not found', 'error'); return; }
-    if (!customer.notes) customer.notes = [];
-    customer.notes.unshift({ id: Date.now(), text, type, createdAt: new Date().toISOString() });
-    addActivity(type + '_added', customer.fullName, "A " + type + " was added to " + customer.fullName);
-    saveData();
-    closeModal();
-    renderNotes();
-    showToast(isQuestion ? 'Question added' : 'Note added', 'success');
+    try {
+      await apiCreateNote({ customer_id: parseInt(custId), type, content: text });
+      if (!customer.notes) customer.notes = [];
+      customer.notes.unshift({ id: Date.now(), text, type, createdAt: new Date().toISOString() });
+      addActivity(type + '_added', customer.fullName, "A " + type + " was added to " + customer.fullName);
+      closeModal();
+      await renderNotes();
+      showToast(isQuestion ? 'Question added' : 'Note added', 'success');
+    } catch (e) { showToast(e.message, 'error'); }
   });
 }
 
@@ -1236,12 +1377,8 @@ function toggleTheme() {
 }
 function setTheme(theme) {
   settings.theme = theme;
-  saveData();
   applyTheme();
-  // Sync theme to PB
-  if (dataSource === "pb") {
-    saveSettingPB('theme', theme).catch(function(){});
-  }
+  try { apiSetSetting('theme', theme); } catch (e) {}
 }
 
 function applyTheme() {
@@ -1252,18 +1389,8 @@ function applyTheme() {
 let notifications = [];
 
 function loadNotifications() {
-  const stored = localStorage.getItem("saleshub_notifs");
-  if (stored) { notifications = JSON.parse(stored); }
-  else {
-    notifications = [
-      { id: 1, message: "New customer Mohamed Salah added", isRead: false, timestamp: new Date(Date.now() - 3600000).toISOString() },
-      { id: 2, message: "Task 'Send proposal to Sara Adel' is due soon", isRead: false, timestamp: new Date(Date.now() - 7200000).toISOString() },
-      { id: 3, message: "Amr Farouk moved to Hot Lead", isRead: true, timestamp: new Date(Date.now() - 86400000).toISOString() }
-    ];
-  }
-}
-function saveNotifications() {
-  localStorage.setItem("saleshub_notifs", JSON.stringify(notifications));
+  // Notifications are loaded via loadData() from API
+  // This function is kept for backward compatibility
 }
 
 function updateNotifBadge() {
@@ -1278,12 +1405,12 @@ function toggleNotifDropdown() {
   const existing = document.getElementById('notif-dropdown');
   if (existing) { existing.remove(); return; }
 
-  const sorted = [...notifications].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const sorted = [...notifications].sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
   let html = '<div id="notif-dropdown" class="notif-dropdown">';
   html += '<h4>Notifications <button class="btn-primary btn-sm" style="width:auto;font-size:11px;padding:4px 10px" onclick="event.stopPropagation();markAllNotifsRead()">Mark All as Read</button></h4>';
   if (sorted.length) {
     sorted.forEach(n => {
-      html += '<div class="notif-item' + (n.isRead ? '' : ' notif-item--unread') + '"><input type="checkbox" class="notif-check"' + (n.isRead ? ' checked' : '') + ' onclick="event.stopPropagation();toggleNotifRead(' + n.id + ', this.checked)" title="Mark as read"><div class="notif-body"><strong>' + n.message + '</strong><span class="notif-time">' + formatTimeAgo(n.timestamp) + '</span></div><button class="notif-dismiss" onclick="event.stopPropagation();dismissNotif(' + n.id + ')" title="Dismiss">&times;</button></div>';
+      html += '<div class="notif-item' + (n.isRead ? '' : ' notif-item--unread') + '"><input type="checkbox" class="notif-check"' + (n.isRead ? ' checked' : '') + ' onclick="event.stopPropagation();toggleNotifRead(' + n.id + ', this.checked)" title="Mark as read"><div class="notif-body"><strong>' + n.message + '</strong><span class="notif-time">' + formatTimeAgo(n.timestamp || n.created_at) + '</span></div><button class="notif-dismiss" onclick="event.stopPropagation();dismissNotif(' + n.id + ')" title="Dismiss">&times;</button></div>';
     });
   } else {
     html += '<div class="notif-empty">No notifications.</div>';
@@ -1306,25 +1433,26 @@ function toggleNotifDropdown() {
   }, 0);
 }
 
-function dismissNotif(id) {
+async function dismissNotif(id) {
+  try { await apiDismissNotif(id); } catch (e) {}
   notifications = notifications.filter(n => n.id !== id);
-  saveNotifications();
-  const dd = document.getElementById('notif-dropdown');
-  if (dd) { const pos = { top: dd.style.top, right: dd.style.right }; dd.remove(); toggleNotifDropdown(); }
-  updateNotifBadge();
-}
-
-function toggleNotifRead(id, isRead) {
-  const n = notifications.find(x => x.id === id);
-  if (n) { n.isRead = isRead; saveNotifications(); updateNotifBadge(); }
-}
-
-function markAllNotifsRead() {
-  notifications.forEach(n => { n.isRead = true; });
-  saveNotifications();
   const dd = document.getElementById('notif-dropdown');
   if (dd) { dd.remove(); toggleNotifDropdown(); }
   updateNotifBadge();
+}
+
+async function toggleNotifRead(id, isRead) {
+  const n = notifications.find(x => x.id === id);
+  if (n) { n.isRead = isRead; updateNotifBadge(); }
+  try { await apiMarkNotifRead(id); } catch (e) {}
+}
+
+async function markAllNotifsRead() {
+  notifications.forEach(n => { n.isRead = true; });
+  updateNotifBadge();
+  try { await apiMarkAllNotifsRead(); } catch (e) {}
+  const dd = document.getElementById('notif-dropdown');
+  if (dd) { dd.remove(); toggleNotifDropdown(); }
 }
 
 /* === TOAST === */
@@ -1352,7 +1480,7 @@ function showLogin(msg) {
     <div class="login-error${msg ? ' visible' : ''}" id="login-error">${msg || ''}</div>
     <div class="form-group">
       <label class="form-label">Email</label>
-      <input type="email" class="form-input" id="login-email" placeholder="admin@saleshub.com" autocomplete="username">
+      <input type="email" class="form-input" id="login-email" placeholder="admin@saleshub.local" autocomplete="username">
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
@@ -1375,22 +1503,12 @@ function showLogin(msg) {
     if (!pw) { fe.textContent = 'Password required'; fe.classList.add('visible'); return; }
     try {
       await loginUser(em, pw);
-      // Reload data from PB if available
-      if (dataSource === "pb") {
-        await Promise.all([
-          loadCustomersFromPB(),
-          loadActivityFromPB(),
-          loadTasksFromPB(),
-          syncSettingsFromPB(),
-        ]);
-        // Safety: if PB returned empty, fall back to localStorage
-        if (customers.length === 0) {
-          loadDataLocal();
-        }
-      }
+      await loadData();
       overlay.remove();
       document.getElementById('app').style.display = 'flex';
-      renderSidebar(); renderTopbar(); router();
+      renderSidebar(); renderTopbar();
+      bindGlobalSearch();
+      router();
     } catch (err) {
       fe.textContent = err.message; fe.classList.add('visible');
     }
@@ -1425,7 +1543,7 @@ function renderTasks() {
 
   document.getElementById('content').innerHTML = `<div class="page-header"><h2>Tasks</h2><button class="btn-primary btn-sm" onclick="showTaskModal()" style="width:auto">+ Add Task</button></div>
     <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <div class="page-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="ts" placeholder="Search tasks..." value="${taskSearchQuery}"></div>
+      <div class="page-search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="ts" placeholder="Search tasks..." value=""></div>
       <select id="tss" class="form-select" style="width:auto"><option value="all">All Status</option>${stsOpts}</select>
       <select id="tsp" class="form-select" style="width:auto"><option value="all">All Priority</option>${priOpts}</select>
     </div>
@@ -1453,13 +1571,24 @@ function showTaskDetail(id) {
 }
 
 let editTask = null;
-function showTaskModal(task) {
+async function showTaskModal(task) {
   editTask = task || null; const ie = !!task;
   const co = customers.map(c => `<option value="${c.id}"${ie&&task.customerId===c.id?' selected':''}>${c.fullName}</option>`).join('');
   const so = ["todo","in_progress","done","overdue"].map(s => `<option value="${s}"${ie&&task.status===s?' selected':''}>${s}</option>`).join('');
   const po = [{key:"low",label:"Low"},{key:"medium",label:"Medium"},{key:"high",label:"High"},{key:"urgent",label:"Urgent"}].map(p => `<option value="${p.key}"${ie&&task.priority===p.key?' selected':''}>${p.label}</option>`).join('');
-  const uo = DEMO_USERS.map(u => `<option value="${u.email}"${ie&&task.assigneeName===u.name?' selected':''}>${u.name}</option>`).join('');
-  const h = `<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">${ie?'Edit Task':'Add Task'}</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Title *</label><input type="text" id="t-title" class="form-input" placeholder="Task title" value="${ie?task.title:''}"></div><div class="form-group"><label class="form-label">Description</label><textarea id="t-desc" class="form-textarea" rows="2" placeholder="Task details">${ie?task.description||'':''}</textarea></div><div class="form-row"><div class="form-group"><label class="form-label">Customer</label><select id="t-cust" class="form-select"><option value="">None</option>${co}</select></div><div class="form-group"><label class="form-label">Assigned To</label><select id="t-assign" class="form-select"><option value="">Unassigned</option>${uo}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Status</label><select id="t-sts" class="form-select">${so}</select></div><div class="form-group"><label class="form-label">Priority</label><select id="t-pri" class="form-select">${po}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Due Date</label><input type="date" id="t-due" class="form-input" value="${ie?task.dueDate||'':''}"></div></div></div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">${ie?'Update':'Create'}</button></div></div></div>`;
+
+  // Fetch agents for assignment dropdown
+  let agentOptions = '<option value="">Unassigned</option>';
+  if (userRole !== 'agent') {
+    try {
+      const users = await apiGetUsers();
+      agentOptions += users.filter(u => u.role === 'agent').map(u =>
+        `<option value="${u.id}" ${ie && String(task.assignedTo) === String(u.id) ? 'selected' : ''}>${u.name}</option>`
+      ).join('');
+    } catch (e) {}
+  }
+
+  const h = `<div class="modal-backdrop"><div class="modal-panel"><div class="modal-header"><h2 class="modal-title">${ie?'Edit Task':'Add Task'}</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><div class="form-group"><label class="form-label">Title *</label><input type="text" id="t-title" class="form-input" placeholder="Task title" value="${ie?task.title:''}"></div><div class="form-group"><label class="form-label">Description</label><textarea id="t-desc" class="form-textarea" rows="2" placeholder="Task details">${ie?task.description||'':''}</textarea></div><div class="form-row"><div class="form-group"><label class="form-label">Customer</label><select id="t-cust" class="form-select"><option value="">None</option>${co}</select></div><div class="form-group"><label class="form-label">Assigned To</label><select id="t-assign" class="form-select">${agentOptions}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Status</label><select id="t-sts" class="form-select">${so}</select></div><div class="form-group"><label class="form-label">Priority</label><select id="t-pri" class="form-select">${po}</select></div></div><div class="form-row"><div class="form-group"><label class="form-label">Due Date</label><input type="date" id="t-due" class="form-input" value="${ie?task.dueDate||'':''}"></div></div></div><div class="modal-footer"><button class="btn-secondary modal-cancel">Cancel</button><button class="btn-primary btn-sm modal-submit" style="width:auto">${ie?'Update':'Create'}</button></div></div></div>`;
   document.getElementById('modal-overlay').innerHTML = h;
   document.body.classList.add('modal-open');
   document.querySelector('.modal-close-btn').addEventListener('click', closeModal);
@@ -1469,51 +1598,67 @@ function showTaskModal(task) {
   document.querySelector('.modal-submit').addEventListener('click', handleTaskSubmit);
 }
 
-function handleTaskSubmit() {
+async function handleTaskSubmit() {
   const title = document.getElementById('t-title').value.trim();
   if (!title) { showToast('Title required', 'error'); return; }
-  const aVal = document.getElementById('t-assign').value;
-  const aName = aVal ? aVal : '';
+  const assignEl = document.getElementById('t-assign');
+  const assignedTo = assignEl && assignEl.value ? parseInt(assignEl.value) : null;
+  const aName = assignedTo ? assignEl.selectedOptions[0].text : null;
   const data = {
     title, description: document.getElementById('t-desc').value.trim(),
-    customerId: document.getElementById('t-cust').value || null,
-    assignedTo: aVal || null, assigneeName: aName,
+    customer_id: document.getElementById('t-cust').value ? parseInt(document.getElementById('t-cust').value) : null,
+    assigned_to: assignedTo,
+    assignee_name: aName || null,
     status: document.getElementById('t-sts').value,
     priority: document.getElementById('t-pri').value,
-    dueDate: document.getElementById('t-due').value || null
+    due_date: document.getElementById('t-due').value || null
   };
-  if (editTask) {
-    Object.assign(editTask, data);
-    editTask.updatedAt = new Date().toISOString();
-    addActivity("task_update", editTask.title || "Task", "Task \u201c" + (editTask.title || "Task") + "\u201d updated");
-    saveData();
-    showToast('Task updated', 'success');
-  } else {
-    const nt = Object.assign({ id: Date.now(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, data);
-    tasks.push(nt);
-    saveData();
-    showToast('Task created', 'success');
-  }
+  try {
+    if (editTask) {
+      const updated = await apiUpdateTask(editTask.id, data);
+      editTask.title = updated.title;
+      editTask.status = updated.status;
+      editTask.priority = updated.priority;
+      editTask.dueDate = updated.due_date || '';
+      editTask.updatedAt = updated.updated_at;
+      addActivity("task_update", editTask.title || "Task", "Task \u201c" + (editTask.title || "Task") + "\u201d updated");
+      showToast('Task updated', 'success');
+    } else {
+      const result = await apiCreateTask(data);
+      tasks.push({
+        id: String(result.id), title: result.title, description: result.description || '',
+        customerId: result.customer_id ? String(result.customer_id) : null,
+        assigneeName: result.assignee_name || '', status: result.status, priority: result.priority,
+        dueDate: result.due_date || '', createdAt: result.created_at, updatedAt: result.updated_at
+      });
+      showToast('Task created', 'success');
+    }
+  } catch (e) { showToast(e.message, 'error'); return; }
   closeModal(); renderTasks();
 }
 
-function deleteTask(id) {
+async function deleteTask(id) {
   if (!confirm('Delete this task?')) return;
-  tasks = tasks.filter(t => t.id !== id);
-  saveData();
-  showToast('Task deleted', 'success');
-  renderTasks();
+  try {
+    await apiDeleteTask(id);
+    tasks = tasks.filter(t => t.id !== id);
+    showToast('Task deleted', 'success');
+    renderTasks();
+  } catch (e) { showToast(e.message, 'error'); }
 }
 
-function toggleTaskDone(id, checked) {
+async function toggleTaskDone(id, checked) {
   const t = tasks.find(x => x.id === id);
   if (!t) return;
-  t.status = checked ? 'done' : 'todo';
-  t.updatedAt = new Date().toISOString();
-  addActivity("status_change", t.title, checked ? "Task \u201c" + t.title + "\u201d marked done" : "Task \u201c" + t.title + "\u201d reopened");
-  saveData();
-  showToast(checked ? 'Task completed' : 'Task reopened', 'success');
-  renderTasks();
+  const newStatus = checked ? 'done' : 'todo';
+  try {
+    await apiUpdateTask(id, { status: newStatus });
+    t.status = newStatus;
+    t.updatedAt = new Date().toISOString();
+    addActivity("status_change", t.title, checked ? "Task \u201c" + t.title + "\u201d marked done" : "Task \u201c" + t.title + "\u201d reopened");
+    showToast(checked ? 'Task completed' : 'Task reopened', 'success');
+    renderTasks();
+  } catch (e) { showToast(e.message, 'error'); }
 }
 
 let pendingInlineEdit = null;
@@ -1539,19 +1684,30 @@ function inlineEditTask(taskId, field, newValue) {
   cell.appendChild(confirm);
 }
 
-function confirmInlineEdit() {
+async function confirmInlineEdit() {
   if (!pendingInlineEdit) return;
   const t = tasks.find(x => x.id === pendingInlineEdit.taskId);
   if (!t) return;
-  if (pendingInlineEdit.field === 'status') {
-    addActivity("status_change", t.title, "Task \u201c" + t.title + "\u201d status changed to " + pendingInlineEdit.newValue);
+  const field = pendingInlineEdit.field;
+  const newValue = pendingInlineEdit.newValue;
+  const updateData = {};
+  if (field === 'status') {
+    updateData.status = newValue;
+    addActivity("status_change", t.title, "Task \u201c" + t.title + "\u201d status changed to " + newValue);
+  } else if (field === 'priority') {
+    updateData.priority = newValue;
   }
-  t[pendingInlineEdit.field] = pendingInlineEdit.newValue;
-  t.updatedAt = new Date().toISOString();
-  saveData();
-  pendingInlineEdit = null;
-  showToast('Updated', 'success');
-  renderTasks();
+  try {
+    const updated = await apiUpdateTask(t.id, updateData);
+    t.status = updated.status;
+    t.priority = updated.priority;
+    t.updatedAt = updated.updated_at;
+    pendingInlineEdit = null;
+    showToast('Updated', 'success');
+    renderTasks();
+  } catch (e) { showToast(e.message, 'error'); }
+  const c = document.querySelector('.ied-confirm');
+  if (c) c.remove();
 }
 
 function cancelInlineEdit() {
@@ -1627,7 +1783,8 @@ const PAGE_NAMES = {
   "#deals-values": "Deal Values",
   "#notes": "Notes & Questions",
   "#tasks": "Tasks",
-  "#reports": "Reports"
+  "#reports": "Reports",
+  "#employees": "Employees"
 };
 
 const ROUTES = {
@@ -1642,8 +1799,66 @@ const ROUTES = {
   "#deals-values": renderDealValues,
   "#notes": renderNotes,
   "#tasks": renderTasks,
-  "#reports": renderReports
+  "#reports": renderReports,
+  "#employees": renderEmployees
 };
+
+/* === EMPLOYEES === */
+async function renderEmployees() {
+  const content = document.getElementById('content');
+  content.innerHTML = '<div class="empty-state"><p>Loading employees...</p></div>';
+
+  try {
+    const users = await apiGetUsers();
+    if (users.length === 0) {
+      content.innerHTML = '<div class="empty-state"><p>No employees found.</p></div>';
+      return;
+    }
+
+    const rows = users.map(u => {
+      const roleBadge = u.role === 'admin'
+        ? '<span class="status-badge" style="background:#EFF6FF;color:#3B82F6">Admin</span>'
+        : '<span class="status-badge" style="background:#F5F3FF;color:#8B5CF6">Agent</span>';
+      const statusBadge = u.is_active
+        ? '<span class="status-badge" style="background:#ECFDF5;color:#10B981">Active</span>'
+        : '<span class="status-badge" style="background:#FEF2F2;color:#EF4444">Inactive</span>';
+      return `<tr>
+        <td><div class="td-with-avatar">${renderAvatarCircle(u.name)}<span>${u.name}</span></div></td>
+        <td>${u.email}</td>
+        <td>${roleBadge}</td>
+        <td>${u.manager_name || '—'}</td>
+        <td>${statusBadge}</td>
+      </tr>`;
+    }).join('');
+
+    content.innerHTML = `
+      <div class="page-header">
+        <div class="page-header-left">
+          <h2>Employees</h2>
+          <span class="page-count">(${users.length})</span>
+        </div>
+      </div>
+      <div class="table-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Manager</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (e) {
+    content.innerHTML = '<div class="empty-state"><p>Failed to load employees.</p></div>';
+  }
+}
 
 function router() {
   const hash = window.location.hash || "#dashboard";
@@ -1690,23 +1905,9 @@ function router() {
 
 window.addEventListener("hashchange", router);
 window.addEventListener("DOMContentLoaded", async () => {
-  await initDataLayer();
   loadNotifications();
+  await loadData();
 
-  // Load tasks from localStorage (or use sample if none)
-  const storedTasks = localStorage.getItem("saleshub_tasks");
-  if (storedTasks) { tasks = JSON.parse(storedTasks); }
-  else {
-    tasks = [
-      { id: 1, title: "Follow up with Mohamed Salah", description: "Call to discuss pricing", assignedTo: null, assigneeName: null, customerId: "cust_101", status: "todo", priority: "high", dueDate: "2024-06-08", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" },
-      { id: 2, title: "Send proposal to Sara Adel", description: "Prepare and email proposal", assignedTo: null, assigneeName: null, customerId: "cust_105", status: "in_progress", priority: "urgent", dueDate: "2024-06-05", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" },
-      { id: 3, title: "Demo call with Amr Farouk", description: "Schedule product demo", assignedTo: null, assigneeName: null, customerId: "cust_109", status: "todo", priority: "medium", dueDate: "2024-06-07", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" },
-      { id: 4, title: "Review competitor analysis", description: "Research pricing for lost deal", assignedTo: null, assigneeName: null, customerId: "cust_118", status: "todo", priority: "low", dueDate: "2024-06-10", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" },
-      { id: 5, title: "Onboarding for Nadia Youssef", description: "Start enterprise onboarding", assignedTo: null, assigneeName: null, customerId: "cust_115", status: "in_progress", priority: "medium", dueDate: "2024-06-06", createdAt: "2024-06-01T10:00:00Z", updatedAt: "2024-06-01T10:00:00Z" }
-    ];
-  }
-
-  // Auth check
   if (!isAuth()) {
     document.getElementById('app').style.display = 'none';
     showLogin();
@@ -1715,10 +1916,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   renderSidebar();
   renderTopbar();
+  bindGlobalSearch();
+  router();
+});
 
-  // Topbar search — customers only
+function bindGlobalSearch() {
   const globalSearch = document.getElementById('global-search');
-  if (globalSearch) {
+  if (globalSearch && !globalSearch._bound) {
+    globalSearch._bound = true;
     globalSearch.addEventListener('input', (e) => {
       const q = e.target.value.trim();
       const hash = window.location.hash || "#dashboard";
@@ -1737,6 +1942,4 @@ window.addEventListener("DOMContentLoaded", async () => {
       }
     });
   }
-
-  router();
-});
+}

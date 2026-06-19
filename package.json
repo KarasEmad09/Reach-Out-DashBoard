@@ -1,0 +1,22 @@
+{
+  "name": "saleshub-crm",
+  "version": "2.0.0",
+  "description": "SalesHub CRM — Node.js + Express + SQLite backend",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KarasEmad09/Reach-Out-DashBoard.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.11.1",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0"
+  }
+}
