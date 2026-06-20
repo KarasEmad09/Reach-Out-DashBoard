@@ -14,14 +14,57 @@ A full-stack CRM dashboard built with vanilla HTML/CSS/JS frontend and a Node.js
 
 ## Quick Start
 
+You only need **Node.js** installed on your machine. Three commands and you're running:
+
 ```bash
 git clone https://github.com/KarasEmad09/Reach-Out-DashBoard.git
-cd Reach-Out-DashBoard
+cd "Reach-Out DashBoard"
 npm install
 npm start
 ```
 
-Open `http://localhost:3000` in your browser.
+Then open **http://localhost:3000** in your browser. The first run creates the SQLite database and seeds it with 20 sample customers, tasks, and notes automatically.
+
+### Prerequisites
+- **Node.js** v18 or later ([download](https://nodejs.org))
+- A modern browser (Chrome, Firefox, Edge, Safari)
+
+## Environment
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `3000` | Server port |
+| `SESSION_SECRET` | (built-in) | Session encryption key |
+
+Example:
+```bash
+# Windows PowerShell
+$env:PORT=8080; npm start
+
+# Mac / Linux
+PORT=8080 npm start
+```
+
+## Troubleshooting
+
+**"Port 3000 already in use"**
+```bash
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+
+# Mac / Linux
+lsof -i :3000
+kill -9 <PID>
+```
+
+**Reset the database** (delete all data, re-seed on next start):
+```bash
+# Windows PowerShell
+Remove-Item saleshub.db -Force; npm start
+```
+
+**Login not working?** Make sure cookies are enabled. The app uses session cookies for authentication.
 
 ## Seed Accounts
 
